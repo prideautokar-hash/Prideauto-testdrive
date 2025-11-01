@@ -1,19 +1,18 @@
 import { Booking, Branch } from '../types';
-import api from '../api';
+import apiClient from './apiClient';
 
 export const login = async (username: string, password: string): Promise<{ token: string }> => {
   if (!username || !password) {
       throw new Error('Username and password are required');
   }
-  // This is a mock login endpoint. A real backend would validate credentials.
-  return api<{ token: string }>('auth/login', {
+  return apiClient<{ token: string }>('login', {
     data: { username, password },
     method: 'POST'
   });
 };
 
 export const getBookings = async (branch: Branch, token: string): Promise<Booking[]> => {
-  return api<Booking[]>(`bookings?branch=${encodeURIComponent(branch)}`, { token });
+  return apiClient<Booking[]>(`bookings?branch=${encodeURIComponent(branch)}`, { token });
 };
 
 export const addBooking = async (
@@ -21,7 +20,7 @@ export const addBooking = async (
   branch: Branch,
   token: string
 ): Promise<Booking> => {
-  return api<Booking>('bookings', {
+  return apiClient<Booking>('bookings', {
     data: { ...bookingData, branch },
     token,
     method: 'POST'

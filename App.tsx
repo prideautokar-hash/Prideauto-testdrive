@@ -7,7 +7,6 @@ import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-// FIX: Corrected import path
 import { getBookings, addBooking } from './services/apiService';
 import { Logo } from './components/Logo';
 
@@ -32,6 +31,7 @@ const App: React.FC = () => {
             setBookings(data);
         } catch (err) {
             setError('ไม่สามารถดึงข้อมูลการจองได้');
+            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -57,9 +57,10 @@ const App: React.FC = () => {
         
         try {
             await addBooking(newBookingData, currentBranch, authToken);
-            fetchBookings(currentBranch, authToken);
+            fetchBookings(currentBranch, authToken); // Refresh data after saving
             setIsModalOpen(false);
         } catch(err) {
+            console.error(err);
             alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         }
     };
@@ -67,8 +68,8 @@ const App: React.FC = () => {
     const handleLoginSuccess = (branch: Branch, token: string) => {
         localStorage.setItem('authToken', token);
         localStorage.setItem('currentBranch', branch);
-        setCurrentBranch(branch);
         setAuthToken(token);
+        setCurrentBranch(branch);
         fetchBookings(branch, token);
     };
 
