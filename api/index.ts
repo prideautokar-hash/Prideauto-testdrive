@@ -1,11 +1,11 @@
 // api/index.ts
-// Mock implementation of the API for the Test Drive Booker application.
+// Mock API implementation with simple, non-secure password handling for convenience.
+// WARNING: This method is INSECURE and MUST NOT be used in a real production application.
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import { Booking, Branch, CarModel } from '../types';
 
 // In-memory store for bookings.
-// Using some initial data for demonstration purposes.
 let bookings: Booking[] = [
     {
         id: '1',
@@ -43,25 +43,15 @@ let bookings: Booking[] = [
 ];
 let nextId = 4;
 
-// Helper to parse the body of a request
 async function parseJSONBody(req: IncomingMessage): Promise<any> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         let body = '';
         req.on('data', chunk => body += chunk.toString());
-        req.on('end', () => {
-            try {
-                resolve(JSON.parse(body || '{}'));
-            } catch (e) {
-                resolve({});
-            }
-        });
-        req.on('error', err => reject(err));
+        req.on('end', () => resolve(JSON.parse(body || '{}')));
     });
 }
 
-// Main handler for all API requests
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
-    // Set CORS headers to allow requests from the frontend
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-api-key');
@@ -72,24 +62,27 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
 
     const url = new URL(req.url!, `http://${req.headers.host}`);
-    
     res.setHeader('Content-Type', 'application/json');
 
     try {
         if (url.pathname.endsWith('/login')) {
             if (req.method === 'POST') {
                 const { username, password } = await parseJSONBody(req);
+                
+                // WARNING: INSECURE plaintext password check for demonstration purposes ONLY.
+                // In a real application, you MUST hash passwords using a library like bcrypt.
                 if (username === 'admin' && password === 'password') {
-                    res.writeHead(200).end(JSON.stringify({ token: 'fake-jwt-token' }));
+                    res.writeHead(200).end(JSON.stringify({ token: 'fake-jwt-token-plaintext-verified' }));
                 } else {
                     res.writeHead(401).end(JSON.stringify({ message: 'Invalid credentials' }));
                 }
             } else {
-                res.writeHead(405).end(JSON.stringify({ message: 'Method Not Allowed' }));
+                 res.writeHead(405).end(JSON.stringify({ message: 'Method Not Allowed' }));
             }
         } else if (url.pathname.endsWith('/bookings')) {
             const token = req.headers.authorization?.split(' ')[1];
-            if (token !== 'fake-jwt-token') {
+            // Check for the new token from the insecure login
+            if (!token || !token.startsWith('fake-jwt-token')) {
                 res.writeHead(401).end(JSON.stringify({ message: 'Unauthorized' }));
                 return;
             }
