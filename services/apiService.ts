@@ -1,76 +1,108 @@
 // services/apiService.ts
-import { Booking, Branch } from '../types';
-import { API_BASE_URL, API_KEY } from '../config';
+import { Booking, Branch, CarModel } from './types';
+
+// --- Start of Mock Backend Logic ---
+// This logic is moved from api/index.ts to run directly in the client.
+// This avoids network errors (Failed to fetch) in a serverless environment.
+
+// In-memory store for bookings.
+let bookings: Booking[] = [
+    {
+        id: '1',
+        customerName: 'John Doe',
+        phoneNumber: '1234567890',
+        date: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0], // tomorrow
+        timeSlot: '10:00',
+        carModel: CarModel.SEAL_PERF,
+        notes: 'Wants to test acceleration.',
+        salesperson: 'Alice',
+        branch: Branch.MAHASARAKHAM,
+    },
+    {
+        id: '2',
+        customerName: 'Jane Smith',
+        phoneNumber: '0987654321',
+        date: new Date().toISOString().split('T')[0], // today
+        timeSlot: '14:00',
+        carModel: CarModel.ATTO3,
+        notes: '',
+        salesperson: 'Bob',
+        branch: Branch.KALASIN,
+    },
+     {
+        id: '3',
+        customerName: 'Peter Jones',
+        phoneNumber: '5555555555',
+        date: new Date().toISOString().split('T')[0], // today
+        timeSlot: '10:00',
+        carModel: CarModel.DOLPHIN,
+        notes: 'Interested in city driving.',
+        salesperson: 'Alice',
+        branch: Branch.MAHASARAKHAM,
+    },
+];
+let nextId = 4;
+
+// Simulate network delay
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+// --- End of Mock Backend Logic ---
+
 
 /**
- * ติดต่อ Server เพื่อทำการ Login
- * @param username - ชื่อผู้ใช้
- * @param password - รหัสผ่าน
- * @returns Promise ที่ resolve เป็น { token: string }
+ * Simulates logging in.
+ * @param username - The username
+ * @param password - The password
+ * @returns A promise that resolves with a fake token.
  */
 export const login = async (username: string, password: string): Promise<{ token: string }> => {
-  const response = await fetch(`${API_BASE_URL}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY, // Key สำหรับ Server เพื่อยืนยันว่ามาจากแอปเรา
-    },
-    body: JSON.stringify({ username, password }),
-  });
+  await delay(500); // Simulate network latency
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' }));
-    throw new Error(errorData.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+  // WARNING: INSECURE plaintext password check for demonstration purposes ONLY.
+  // In a real application, you MUST hash passwords.
+  if (username === 'admin' && password === 'password') {
+    return Promise.resolve({ token: 'fake-jwt-token-for-client-side-demo' });
+  } else {
+    return Promise.reject(new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
   }
-
-  return response.json();
 };
 
 /**
- * ดึงข้อมูลการจองทั้งหมดของสาขาจาก Server
- * @param branch - สาขาที่ต้องการข้อมูล
- * @param token - Token สำหรับยืนยันตัวตน
- * @returns Promise ที่ resolve เป็น array ของ Bookings
+ * Simulates fetching all bookings for a specific branch.
+ * @param branch - The branch to filter bookings by.
+ * @param token - The auth token (unused in this mock, but kept for API consistency).
+ * @returns A promise that resolves with an array of bookings.
  */
 export const getBookings = async (branch: Branch, token: string): Promise<Booking[]> => {
-  const response = await fetch(`${API_BASE_URL}/bookings?branch=${encodeURIComponent(branch)}`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'x-api-key': API_KEY,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('ไม่สามารถดึงข้อมูลการจองได้');
+  await delay(800);
+  
+  if (!token) {
+      return Promise.reject(new Error('Unauthorized'));
   }
 
-  return response.json();
+  const branchBookings = bookings.filter(b => b.branch === branch);
+  return Promise.resolve(branchBookings);
 };
 
 /**
- * ส่งข้อมูลการจองใหม่ไปบันทึกที่ Server
- * @param bookingData - ข้อมูลการจอง
- * @param branch - สาขาที่ทำการจอง
- * @param token - Token สำหรับยืนยันตัวตน
- * @returns Promise ที่ resolve เป็น Booking ที่ถูกสร้างขึ้น
+ * Simulates adding a new booking.
+ * @param bookingData - The new booking data.
+ * @param branch - The branch where the booking is made.
+ * @param token - The auth token.
+ * @returns A promise that resolves with the newly created booking.
  */
 export const addBooking = async (bookingData: Omit<Booking, 'id' | 'branch'>, branch: Branch, token: string): Promise<Booking> => {
-    const payload = { ...bookingData, branch };
+    await delay(600);
     
-    const response = await fetch(`${API_BASE_URL}/bookings`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'x-api-key': API_KEY,
-        },
-        body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-        throw new Error('ไม่สามารถบันทึกการจองได้');
+    if (!token) {
+        return Promise.reject(new Error('Unauthorized'));
     }
 
-    return response.json();
+    const newBooking: Booking = { 
+        ...bookingData,
+        branch,
+        id: String(nextId++) 
+    };
+    bookings.push(newBooking);
+    return Promise.resolve(newBooking);
 };
