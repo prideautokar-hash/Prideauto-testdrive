@@ -27,6 +27,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const BranchButton = ({ value, label }: { value: Branch, label: string }) => (
+    <button
+      type="button"
+      onClick={() => setBranch(value)}
+      disabled={isLoading}
+      className={`w-full p-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+        branch === value
+          ? 'text-white shadow'
+          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+      } disabled:opacity-50`}
+      style={{
+        backgroundColor: branch === value ? '#98B6D7' : undefined,
+      }}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md">
@@ -37,16 +55,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <form className="space-y-6" onSubmit={handleSubmit}>
           {error && <p className="bg-red-100 text-red-700 p-3 rounded-md text-center text-sm">{error}</p>}
           <div>
-            <label className="block text-sm font-medium text-gray-700">สาขา</label>
-            <select
-              value={branch}
-              onChange={(e) => setBranch(e.target.value as Branch)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
-              disabled={isLoading}
-            >
-              <option value={Branch.MAHASARAKHAM}>{Branch.MAHASARAKHAM}</option>
-              <option value={Branch.KALASIN}>{Branch.KALASIN}</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700 mb-2">เลือกสาขา</label>
+            <div className="grid grid-cols-2 gap-3">
+              <BranchButton value={Branch.MAHASARAKHAM} label={Branch.MAHASARAKHAM} />
+              <BranchButton value={Branch.KALASIN} label={Branch.KALASIN} />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">ชื่อผู้ใช้</label>
