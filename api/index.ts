@@ -24,7 +24,6 @@ async function parseJSONBody(req: IncomingMessage): Promise<any> {
         req.on('data', chunk => body += chunk.toString());
         req.on('end', () => {
             try {
-                // Handle empty body
                 if (body === '') {
                     resolve({});
                     return;
@@ -67,8 +66,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
     const url = new URL(req.url || '', `http://${req.headers.host}`);
 
+    let client;
     try {
-        const client = await pool.connect();
+        client = await pool.connect();
         try {
             // --- LOGIN ENDPOINT ---
             if (url.pathname === '/api' || url.pathname === '/api/login') {
@@ -77,12 +77,11 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     if (!username || !password) {
                         return res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Username and password are required' }));
                     }
-
-                    const userResult = await client.query('SELECT id, password_hash FROM Users WHERE username = $1', [username]);
+                    
+                    const userResult = await client.query('SELECT id, password_hash FROM public.users WHERE username = $1', [username]);
                     const user = userResult.rows[0];
 
                     // IMPORTANT: Plain text password comparison for simplicity as requested.
-                    // DO NOT USE IN PRODUCTION without hashing passwords.
                     if (user && user.password_hash === password) {
                         const token = jwt.sign({ userId: user.id, username: username }, JWT_SECRET, { expiresIn: '8h' });
                         res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ token }));
@@ -113,11 +112,11 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                             cr.model_name as "carModel",
                             s.name as "salesperson",
                             br.name as "branch"
-                        FROM Bookings b
-                        INNER JOIN Customers c ON b.customer_id = c.id
-                        INNER JOIN Cars cr ON b.car_id = cr.id
-                        INNER JOIN Salespeople s ON b.salesperson_id = s.id
-                        INNER JOIN Branches br ON b.branch_id = br.id
+                        FROM public.bookings b
+                        INNER JOIN public.customers c ON b.customer_id = c.id
+                        INNER JOIN public.cars cr ON b.car_id = cr.id
+                        INNER JOIN public.salespeople s ON b.salesperson_id = s.id
+                        INNER JOIN public.branches br ON b.branch_id = br.id
                         WHERE br.name = $1
                         ORDER BY b.booking_date, b.booking_time
                     `, [branch]);
@@ -136,18 +135,18 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     
                     await client.query('BEGIN');
 
-                    let customerResult = await client.query('SELECT id FROM Customers WHERE name = $1 AND (phone_number = $2 OR ($2 IS NULL AND phone_number IS NULL))', [customerName, phoneNumber || null]);
+                    let customerResult = await client.query('SELECT id FROM public.customers WHERE name = $1 AND (phone_number = $2 OR ($2 IS NULL AND phone_number IS NULL))', [customerName, phoneNumber || null]);
                     let customerId;
                     if (customerResult.rows.length > 0) {
                         customerId = customerResult.rows[0].id;
                     } else {
-                        const newCustomerResult = await client.query('INSERT INTO Customers (name, phone_number) VALUES ($1, $2) RETURNING id', [customerName, phoneNumber || null]);
+                        const newCustomerResult = await client.query('INSERT INTO public.customers (name, phone_number) VALUES ($1, $2) RETURNING id', [customerName, phoneNumber || null]);
                         customerId = newCustomerResult.rows[0].id;
                     }
 
-                    const carResult = await client.query('SELECT id FROM Cars WHERE model_name = $1', [carModel]);
-                    const branchResult = await client.query('SELECT id FROM Branches WHERE name = $1', [branch]);
-                    const salespersonResult = await client.query('SELECT id FROM Salespeople WHERE name = $1 AND branch_id = $2', [salesperson, branchResult.rows[0]?.id]);
+                    const carResult = await client.query('SELECT id FROM public.cars WHERE model_name = $1', [carModel]);
+                    const branchResult = await client.query('SELECT id FROM public.branches WHERE name = $1', [branch]);
+                    const salespersonResult = await client.query('SELECT id FROM public.salespeople WHERE name = $1 AND branch_id = $2', [salesperson, branchResult.rows[0]?.id]);
 
                     if (!carResult.rows[0] || !branchResult.rows[0] || !salespersonResult.rows[0]) {
                         await client.query('ROLLBACK');
@@ -155,14 +154,13 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     }
 
                     const insertResult = await client.query(
-                        `INSERT INTO Bookings (customer_id, car_id, salesperson_id, branch_id, booking_date, booking_time, notes, created_by_user_id)
+                        `INSERT INTO public.bookings (customer_id, car_id, salesperson_id, branch_id, booking_date, booking_time, notes, created_by_user_id)
                          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
                         [customerId, carResult.rows[0].id, salespersonResult.rows[0].id, branchResult.rows[0].id, date, timeSlot, notes || null, userData.userId]
                     );
 
                     await client.query('COMMIT');
                     
-                    // Respond with the newly created booking, mirroring the GET structure
                     const newBooking = {
                         id: String(insertResult.rows[0].id),
                         customerName, phoneNumber, date, timeSlot, carModel, notes, salesperson, branch
@@ -175,7 +173,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 res.writeHead(404, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: `Route ${req.method} ${url.pathname} Not Found` }));
             }
         } finally {
-            client.release();
+            if (client) {
+                client.release();
+            }
         }
     } catch (error: any) {
         console.error('SERVER ERROR:', error);
