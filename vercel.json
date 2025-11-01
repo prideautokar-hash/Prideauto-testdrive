@@ -1,1 +1,9 @@
-full contents of vercel.json
+
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    }
+  ]
+}
