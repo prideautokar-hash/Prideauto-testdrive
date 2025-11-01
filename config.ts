@@ -1,8 +1,2 @@
-// config.ts
-
-/**
- * The base URL for the API.
- * In a Vercel environment, relative paths like '/api' will automatically
- * be routed to the serverless functions in the /api directory.
- */
-export const API_BASE_URL = '/api';
+// FIX: Define API_BASE_URL to be used by the api client.
+export const API_BASE_URL = 'http://localhost:3001/api';

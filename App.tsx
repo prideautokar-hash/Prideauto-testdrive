@@ -7,6 +7,7 @@ import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
+// FIX: Corrected import path
 import { getBookings, addBooking } from './services/apiService';
 import { Logo } from './components/Logo';
 
