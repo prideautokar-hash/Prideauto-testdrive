@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Booking } from '../types';
 
 interface CalendarViewProps {
@@ -10,106 +9,130 @@ interface CalendarViewProps {
 }
 
 const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [viewDate, setViewDate] = useState(selectedDate);
 
-  const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-  const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-  const startDate = new Date(startOfMonth);
-  startDate.setDate(startDate.getDate() - startDate.getDay());
-  const endDate = new Date(endOfMonth);
-  endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
-
-  const bookingsByDate: { [key: string]: number } = bookings.reduce((acc, booking) => {
-    acc[booking.date] = (acc[booking.date] || 0) + 1;
-    return acc;
-  }, {} as { [key: string]: number });
-  
-  const bookingsForSelectedDate = bookings.filter(b => b.date === selectedDate.toISOString().split('T')[0]);
-
-  const renderHeader = () => {
-    return (
-      <div className="flex justify-between items-center mb-4">
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))} className="p-2 rounded-full hover:bg-gray-200">
-          &lt;
-        </button>
-        <h2 className="text-xl font-bold text-gray-700">
-          {currentMonth.toLocaleString('th-TH', { month: 'long', year: 'numeric' })}
-        </h2>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))} className="p-2 rounded-full hover:bg-gray-200">
-          &gt;
-        </button>
-      </div>
-    );
-  };
-  
-  const renderDays = () => {
-    const days = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
-    return (
-      <div className="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600">
-        {days.map(day => <div key={day}>{day}</div>)}
-      </div>
-    );
-  };
-
-  const renderCells = () => {
-    const rows = [];
-    let days = [];
-    let day = new Date(startDate);
-    
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        const dateStr = day.toISOString().split('T')[0];
-        const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-        const isSelected = day.toDateString() === selectedDate.toDateString();
-        const bookingCount = bookingsByDate[dateStr] || 0;
-
-        days.push(
-          <div
-            key={day.toString()}
-            className={`p-1 text-center rounded-lg cursor-pointer transition-colors duration-200 ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-800'} ${isSelected ? 'bg-[#98B6D7] text-white' : 'hover:bg-blue-100'}`}
-            onClick={() => setSelectedDate(new Date(day))}
-          >
-            <div className="relative">
-                <span>{day.getDate()}</span>
-                {bookingCount > 0 && <span className="absolute top-0 right-0 text-xs text-green-600 font-bold">{bookingCount}</span>}
-            </div>
-          </div>
-        );
-        day.setDate(day.getDate() + 1);
-      }
-      rows.push(<div className="grid grid-cols-7 gap-1 mt-1" key={day.toString()}>{days}</div>);
-      days = [];
+  useEffect(() => {
+    // Sync view date with selected date if month/year changes from outside
+    if (selectedDate.getFullYear() !== viewDate.getFullYear() || selectedDate.getMonth() !== viewDate.getMonth()) {
+        setViewDate(selectedDate);
     }
-    return <div>{rows}</div>;
+  }, [selectedDate, viewDate]);
+
+  const bookingsByDate = useMemo(() => {
+    const map = new Map<string, Booking[]>();
+    bookings.forEach(booking => {
+      const dateStr = booking.date; // Already YYYY-MM-DD
+      if (!map.has(dateStr)) {
+        map.set(dateStr, []);
+      }
+      map.get(dateStr)!.push(booking);
+    });
+    return map;
+  }, [bookings]);
+
+  const currentMonth = viewDate.getMonth();
+  const currentYear = viewDate.getFullYear();
+
+  const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+  const dayNames = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  const prevMonth = () => {
+    setViewDate(new Date(currentYear, currentMonth - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setViewDate(new Date(currentYear, currentMonth + 1, 1));
+  };
+
+  const handleDayClick = (day: number) => {
+    setSelectedDate(new Date(currentYear, currentMonth, day));
   };
   
-  return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="bg-white p-4 rounded-lg shadow">
-        {renderHeader()}
-        {renderDays()}
-        {renderCells()}
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-700">
-                สรุปการจองวันที่ {selectedDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </h3>
-            <button onClick={() => openBookingModal({ date: selectedDate.toISOString().split('T')[0] })} style={{ backgroundColor: '#98B6D7' }} className="text-white px-4 py-2 text-sm rounded-md hover:opacity-90">
-                เพิ่มการจอง
-            </button>
-        </div>
-        <div className="space-y-3 max-h-60 overflow-y-auto">
-          {bookingsForSelectedDate.length > 0 ? (
-            bookingsForSelectedDate.map(booking => (
-              <div key={booking.id} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="font-semibold text-gray-800">{booking.timeSlot} - {booking.carModel}</p>
-                <p className="text-sm text-gray-600">ลูกค้า: {booking.customerName} (เซลล์: {booking.salesperson})</p>
+  const renderCalendarDays = () => {
+    const days = [];
+    // Padding for days before start of month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        days.push(<div key={`empty-start-${i}`} className="border border-transparent"></div>);
+    }
+
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentYear, currentMonth, day);
+      const dateStr = date.toISOString().split('T')[0];
+      const isSelected = selectedDate.toDateString() === date.toDateString();
+      const isToday = new Date().toDateString() === date.toDateString();
+      const dayBookings = bookingsByDate.get(dateStr) || [];
+
+      const dayClasses = [
+        'p-2 border rounded-md cursor-pointer transition-colors relative flex flex-col group h-24 md:h-32',
+        isSelected ? 'bg-blue-200 border-blue-400 font-bold' : 'border-gray-200 hover:bg-gray-100',
+        !isSelected && isToday ? 'bg-yellow-100' : '',
+        'text-gray-700',
+      ].join(' ');
+
+      const dayNumberClasses = [
+        'text-right text-sm',
+        isToday ? 'text-red-500 font-bold' : '',
+      ].join(' ');
+
+      days.push(
+        <div 
+          key={day} 
+          onClick={() => handleDayClick(day)}
+          className={dayClasses}
+        >
+          <div className={dayNumberClasses}>{day}</div>
+          
+          <div className="flex-grow overflow-y-auto text-xs space-y-1 mt-1">
+            {dayBookings.slice(0, 3).map(b => (
+              <div key={b.id} className="bg-blue-100 text-blue-800 rounded p-1 truncate" title={`${b.customerName} - ${b.carModel}`}>
+                {b.customerName}
               </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-center py-4">ไม่มีการจองในวันที่เลือก</p>
-          )}
+            ))}
+            {dayBookings.length > 3 && (
+              <div className="text-gray-500 font-medium">+{dayBookings.length - 3} เพิ่มเติม</div>
+            )}
+          </div>
+          
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              openBookingModal({ date: dateStr });
+            }} 
+            className="absolute bottom-1 right-1 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity text-lg"
+            aria-label="Add booking"
+          >
+            +
+          </button>
+        </div>
+      );
+    }
+    return days;
+  };
+  
+
+  return (
+    <div className="p-4 md:p-6">
+      <div className="bg-white p-4 rounded-lg shadow w-full">
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={prevMonth} className="p-2 rounded-full hover:bg-gray-100" aria-label="Previous month">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <h2 className="text-xl font-bold text-gray-800">{monthNames[currentMonth]} {currentYear + 543}</h2>
+          <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-100" aria-label="Next month">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 mb-2">
+          {dayNames.map(day => <div key={day} className="py-2">{day}</div>)}
+        </div>
+        
+        <div className="grid grid-cols-7 gap-2">
+            {renderCalendarDays()}
         </div>
       </div>
     </div>
