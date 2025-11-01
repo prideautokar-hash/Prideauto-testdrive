@@ -1,5 +1,5 @@
 // services/apiService.ts
-import { Booking, Branch, CarModel } from './types';
+import { Booking, Branch, CarModel } from '../types';
 
 // --- Start of Mock Backend Logic ---
 // This logic is moved from api/index.ts to run directly in the client.
