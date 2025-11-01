@@ -9,10 +9,11 @@ import { Booking, Branch } from '../types';
  * @returns A promise that resolves with the authentication token.
  */
 export const login = async (username: string, password: string): Promise<{ token: string }> => {
-  const response = await fetch(`${API_BASE_URL}/login`, {
+  const response = await fetch(`${API_BASE_URL}`, { // Note: Vercel routes /api to the handler
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'X-Target-Path': 'login' // Custom header to route within the single function
     },
     body: JSON.stringify({ username, password }),
   });
@@ -32,9 +33,10 @@ export const login = async (username: string, password: string): Promise<{ token
  * @returns A promise that resolves with an array of bookings.
  */
 export const getBookings = async (branch: Branch, token: string): Promise<Booking[]> => {
-  const response = await fetch(`${API_BASE_URL}/bookings?branch=${encodeURIComponent(branch)}`, {
+  const response = await fetch(`${API_BASE_URL}?branch=${encodeURIComponent(branch)}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
+      'X-Target-Path': 'bookings'
     },
   });
 
@@ -57,11 +59,12 @@ export const addBooking = async (
   branch: Branch,
   token: string
 ): Promise<Booking> => {
-  const response = await fetch(`${API_BASE_URL}/bookings`, {
+  const response = await fetch(`${API_BASE_URL}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
+      'X-Target-Path': 'bookings'
     },
     body: JSON.stringify({ bookingData, branch }),
   });

@@ -24,10 +24,7 @@ async function parseJSONBody(req: IncomingMessage): Promise<any> {
         req.on('data', chunk => body += chunk.toString());
         req.on('end', () => {
             try {
-                if (body === '') {
-                    resolve({});
-                    return;
-                }
+                if (body === '') return resolve({});
                 resolve(JSON.parse(body));
             } catch (error) {
                 reject(new Error('Invalid JSON body'));
@@ -53,56 +50,55 @@ function getUserFromToken(req: IncomingMessage): { userId: number; username: str
 
 // Main request handler
 const handler = async (req: IncomingMessage, res: ServerResponse) => {
-    // Set CORS headers to allow requests from any origin
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.setHeader('Access-control-allow-headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Target-Path');
 
-    // Respond to preflight requests
     if (req.method === 'OPTIONS') {
         res.writeHead(204).end();
         return;
     }
 
     const url = new URL(req.url || '', `http://${req.headers.host}`);
+    const targetPath = req.headers['x-target-path'] || '';
 
     let client;
     try {
         client = await pool.connect();
         try {
             // --- LOGIN ENDPOINT ---
-            if (url.pathname === '/api' || url.pathname === '/api/login') {
-                if (req.method === 'POST') {
-                    const { username, password } = await parseJSONBody(req);
-                    if (!username || !password) {
-                        return res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Username and password are required' }));
-                    }
-                    
-                    const userResult = await client.query('SELECT id, password_hash FROM public.users WHERE username = $1', [username]);
-                    const user = userResult.rows[0];
-
-                    // IMPORTANT: Plain text password comparison for simplicity as requested.
-                    if (user && user.password_hash === password) {
-                        const token = jwt.sign({ userId: user.id, username: username }, JWT_SECRET, { expiresIn: '8h' });
-                        res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ token }));
-                    } else {
-                        res.writeHead(401, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' }));
-                    }
+            if (targetPath === 'login' && req.method === 'POST') {
+                const { username, password } = await parseJSONBody(req);
+                if (!username || !password) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Username and password are required' }));
                     return;
                 }
+                
+                const userResult = await client.query('SELECT id, password_hash FROM public.users WHERE username = $1', [username]);
+                const user = userResult.rows[0];
+
+                if (user && user.password_hash === password) {
+                    const token = jwt.sign({ userId: user.id, username: username }, JWT_SECRET, { expiresIn: '8h' });
+                    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ token }));
+                } else {
+                    res.writeHead(401, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' }));
+                }
+                return;
             }
             
             // --- BOOKINGS ENDPOINT ---
-            else if (url.pathname === '/api/bookings') {
+            if (targetPath === 'bookings') {
                  const userData = getUserFromToken(req);
                  if (!userData) {
-                    return res.writeHead(401, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Unauthorized: No token provided' }));
+                    res.writeHead(401, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Unauthorized: No token provided' }));
+                    return;
                  }
 
                 if (req.method === 'GET') {
                     const branch = url.searchParams.get('branch');
                     if (!branch) {
-                        return res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Branch query parameter is required' }));
+                        res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'Branch query parameter is required' }));
+                        return;
                     }
                     
                     const bookingsResult = await client.query(`
@@ -123,11 +119,12 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                     const formattedBookings = bookingsResult.rows.map(b => ({
                         ...b,
-                        id: String(b.id), // Ensure id is a string
+                        id: String(b.id),
                         date: new Date(b.date).toISOString().split('T')[0]
                     }));
 
                     res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(formattedBookings));
+                    return;
                 }
                 else if (req.method === 'POST') {
                     const { bookingData, branch } = await parseJSONBody(req);
@@ -150,7 +147,8 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                     if (!carResult.rows[0] || !branchResult.rows[0] || !salespersonResult.rows[0]) {
                         await client.query('ROLLBACK');
-                        return res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'ข้อมูลรถ, เซลล์, หรือสาขาไม่ถูกต้อง' }));
+                        res.writeHead(400, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: 'ข้อมูลรถ, เซลล์, หรือสาขาไม่ถูกต้อง' }));
+                        return;
                     }
 
                     const insertResult = await client.query(
@@ -167,11 +165,12 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     };
                     
                     res.writeHead(201, { 'Content-Type': 'application/json' }).end(JSON.stringify(newBooking));
+                    return;
                 }
             }
-             else {
-                res.writeHead(404, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: `Route ${req.method} ${url.pathname} Not Found` }));
-            }
+            
+            res.writeHead(404, { 'Content-Type': 'application/json' }).end(JSON.stringify({ message: `Route Not Found for path: ${targetPath}` }));
+
         } finally {
             if (client) {
                 client.release();
