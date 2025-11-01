@@ -1,116 +1,72 @@
 // services/apiService.ts
-import { Booking, Branch, CarModel } from '../types';
-
-// --- Start of Mock Backend Logic ---
-// This logic runs directly in the client to avoid network errors
-// in this demonstration environment.
-
-// In-memory store for bookings.
-let bookings: Booking[] = [
-    {
-        id: '1',
-        customerName: 'John Doe',
-        phoneNumber: '1234567890',
-        date: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0], // tomorrow
-        timeSlot: '10:00',
-        carModel: CarModel.SEAL_PERF,
-        notes: 'Wants to test acceleration.',
-        salesperson: 'Alice',
-        branch: Branch.MAHASARAKHAM,
-    },
-    {
-        id: '2',
-        customerName: 'Jane Smith',
-        phoneNumber: '0987654321',
-        date: new Date().toISOString().split('T')[0], // today
-        timeSlot: '14:00',
-        carModel: CarModel.ATTO3,
-        notes: '',
-        salesperson: 'Bob',
-        branch: Branch.KALASIN,
-    },
-     {
-        id: '3',
-        customerName: 'Peter Jones',
-        phoneNumber: '5555555555',
-        date: new Date().toISOString().split('T')[0], // today
-        timeSlot: '10:00',
-        carModel: CarModel.DOLPHIN,
-        notes: 'Interested in city driving.',
-        salesperson: 'Alice',
-        branch: Branch.MAHASARAKHAM,
-    },
-];
-let nextId = 4;
-
-// Simulate network delay
-const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-// --- End of Mock Backend Logic ---
-
+import { API_BASE_URL } from '../config';
+import { Booking, Branch } from '../types';
 
 /**
- * Simulates logging in.
- * @param username - The username
- * @param password - The password
- * @returns A promise that resolves with a fake token.
+ * Handles login by sending credentials to the backend.
+ * @param username - The user's username.
+ * @param password - The user's password.
+ * @returns A promise that resolves with the authentication token.
  */
 export const login = async (username: string, password: string): Promise<{ token: string }> => {
-  await delay(500); // Simulate network latency
+  const response = await fetch(`${API_BASE_URL}/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
 
-  // --- MOCK LOGIN LOGIC ---
-  // This is a simple, direct text comparison.
-  // It checks if the provided username is exactly "admin" AND the password is exactly "password".
-  // This has no connection to any database or password hashing. It's for demonstration only.
-  
-  const isUsernameCorrect = username === 'admin';
-  const isPasswordCorrect = password === 'password';
-
-  if (isUsernameCorrect && isPasswordCorrect) {
-    // If both match, the login is successful.
-    return Promise.resolve({ token: 'fake-jwt-token-for-client-side-demo' });
-  } else {
-    // If either one does not match, the login fails.
-    return Promise.reject(new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' }));
+    throw new Error(errorData.message);
   }
+
+  return response.json();
 };
 
 /**
- * Simulates fetching all bookings for a specific branch.
+ * Fetches all bookings for a specific branch from the backend.
  * @param branch - The branch to filter bookings by.
- * @param token - The auth token (unused in this mock, but kept for API consistency).
+ * @param token - The auth token for authorization.
  * @returns A promise that resolves with an array of bookings.
  */
 export const getBookings = async (branch: Branch, token: string): Promise<Booking[]> => {
-  await delay(800);
-  
-  if (!token) {
-      return Promise.reject(new Error('Unauthorized'));
-  }
+  const response = await fetch(`${API_BASE_URL}/bookings?branch=${encodeURIComponent(branch)}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
 
-  const branchBookings = bookings.filter(b => b.branch === branch);
-  return Promise.resolve(branchBookings);
+  if (!response.ok) {
+    throw new Error('ไม่สามารถดึงข้อมูลการจองได้');
+  }
+  return response.json();
 };
 
 /**
- * Simulates adding a new booking.
+ * Adds a new booking by sending the data to the backend.
  * @param bookingData - The new booking data.
  * @param branch - The branch where the booking is made.
- * @param token - The auth token.
+ * @param token - The auth token for authorization.
  * @returns A promise that resolves with the newly created booking.
  */
-export const addBooking = async (bookingData: Omit<Booking, 'id' | 'branch'>, branch: Branch, token: string): Promise<Booking> => {
-    await delay(600);
-    
-    if (!token) {
-        return Promise.reject(new Error('Unauthorized'));
-    }
+export const addBooking = async (
+  bookingData: Omit<Booking, 'id' | 'branch'>,
+  branch: Branch,
+  token: string
+): Promise<Booking> => {
+  const response = await fetch(`${API_BASE_URL}/bookings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ bookingData, branch }),
+  });
 
-    const newBooking: Booking = { 
-        ...bookingData,
-        branch,
-        id: String(nextId++) 
-    };
-    bookings.push(newBooking);
-    return Promise.resolve(newBooking);
+  if (!response.ok) {
+    throw new Error('ไม่สามารถบันทึกการจองได้');
+  }
+  return response.json();
 };
