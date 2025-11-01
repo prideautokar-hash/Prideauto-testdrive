@@ -19,7 +19,7 @@ export const login = async (username: string, password: string): Promise<{ token
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' }));
-    throw new Error(errorData.message);
+    throw new Error(errorData.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
   }
 
   return response.json();
@@ -39,7 +39,8 @@ export const getBookings = async (branch: Branch, token: string): Promise<Bookin
   });
 
   if (!response.ok) {
-    throw new Error('ไม่สามารถดึงข้อมูลการจองได้');
+    const errorData = await response.json().catch(() => ({ message: 'ไม่สามารถดึงข้อมูลการจองได้' }));
+    throw new Error(errorData.message || 'ไม่สามารถดึงข้อมูลการจองได้');
   }
   return response.json();
 };
@@ -66,7 +67,8 @@ export const addBooking = async (
   });
 
   if (!response.ok) {
-    throw new Error('ไม่สามารถบันทึกการจองได้');
+    const errorData = await response.json().catch(() => ({ message: 'ไม่สามารถบันทึกการจองได้' }));
+    throw new Error(errorData.message || 'ไม่สามารถบันทึกการจองได้');
   }
   return response.json();
 };
