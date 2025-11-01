@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Branch } from '../types';
 import { login } from '../services/apiService';
+import { Logo } from './Logo';
 
 interface LoginPageProps {
   onLoginSuccess: (branch: Branch, token: string) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('password');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [branch, setBranch] = useState<Branch>(Branch.MAHASARAKHAM);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,10 +50,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
+          <Logo className="w-40 h-16 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gray-800">Test Drive Booker</h1>
-          <p className="mt-2 text-gray-600">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+          <p className="mt-2 text-gray-600">ระบบจองคิวทดลองขับ</p>
         </div>
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {error && <p className="bg-red-100 text-red-700 p-3 rounded-md text-center text-sm">{error}</p>}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">เลือกสาขา</label>
@@ -62,27 +64,27 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">ชื่อผู้ใช้</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="admin"
+              className="block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="ชื่อผู้ใช้"
               disabled={isLoading}
+              aria-label="ชื่อผู้ใช้"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="password"
+              className="block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="รหัสผ่าน"
               disabled={isLoading}
+              aria-label="รหัสผ่าน"
             />
           </div>
           <div>

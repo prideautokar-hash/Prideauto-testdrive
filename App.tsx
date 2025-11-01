@@ -8,6 +8,7 @@ import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
 import { getBookings, addBooking } from './services/apiService';
+import { Logo } from './components/Logo';
 
 type Page = 'calendar' | 'slots' | 'usage' | 'dashboard';
 
@@ -36,10 +37,14 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (currentBranch && authToken) {
-            fetchBookings(currentBranch, authToken);
+        const storedToken = localStorage.getItem('authToken');
+        const storedBranch = localStorage.getItem('currentBranch') as Branch;
+        if (storedToken && storedBranch) {
+            setAuthToken(storedToken);
+            setCurrentBranch(storedBranch);
+            fetchBookings(storedBranch, storedToken);
         }
-    }, [currentBranch, authToken, fetchBookings]);
+    }, [fetchBookings]);
 
     const openBookingModal = useCallback((data?: Partial<Booking>) => {
         setModalInitialData(data);
@@ -51,7 +56,6 @@ const App: React.FC = () => {
         
         try {
             await addBooking(newBookingData, currentBranch, authToken);
-            // After saving, refetch all bookings to get the latest data
             fetchBookings(currentBranch, authToken);
             setIsModalOpen(false);
         } catch(err) {
@@ -60,11 +64,16 @@ const App: React.FC = () => {
     };
 
     const handleLoginSuccess = (branch: Branch, token: string) => {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('currentBranch', branch);
         setCurrentBranch(branch);
         setAuthToken(token);
+        fetchBookings(branch, token);
     };
 
     const handleLogout = () => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentBranch');
         setAuthToken(null);
         setCurrentBranch(null);
         setBookings([]);
@@ -111,9 +120,9 @@ const App: React.FC = () => {
             {/* Desktop sidebar */}
             <nav style={{ backgroundColor: '#98B6D7' }} className="hidden md:flex fixed top-0 left-0 h-screen w-24 flex-col items-center justify-between py-6 z-20">
                 <div className="flex flex-col items-center w-full space-y-4">
-                    <div className="p-2 text-center">
-                        <h2 className="text-white font-bold text-lg">BYD</h2>
-                        <span className="text-blue-100 text-xs">{currentBranch}</span>
+                    <div className="p-2 w-full">
+                         <Logo className="w-full h-10" />
+                         <span className="block text-center text-blue-100 text-xs mt-2">{currentBranch}</span>
                     </div>
                     <NavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-7 h-7" />} />
                     <NavItem page="slots" label="Slots" icon={<ListIcon className="w-7 h-7" />} />
@@ -127,15 +136,15 @@ const App: React.FC = () => {
 
             {/* Content area */}
             <div className="md:pl-24">
-                <header style={{ backgroundColor: '#98B6D7' }} className="text-white p-4 shadow-md text-center sticky top-0 z-10 md:hidden">
-                    <div className="flex justify-between items-center">
-                        <div className="text-left">
-                           <h1 className="text-xl font-bold">Test Drive Booker</h1>
-                           <p className="text-sm text-blue-100">สาขา: {currentBranch}</p>
+                <header style={{ backgroundColor: '#98B6D7' }} className="text-white p-4 shadow-md sticky top-0 z-10 md:hidden">
+                    <div className="flex justify-between items-center w-full">
+                        <Logo className="h-10 w-24" />
+                        <div className="text-right">
+                           <p className="text-sm font-semibold text-white">สาขา: {currentBranch}</p>
+                           <button onClick={handleLogout} className="text-white bg-white/20 px-2 py-0.5 rounded text-xs mt-1">
+                               ออกจากระบบ
+                           </button>
                         </div>
-                        <button onClick={handleLogout} className="text-white bg-white/20 px-3 py-1 rounded text-xs">
-                            ออกจากระบบ
-                        </button>
                     </div>
                 </header>
                 <main className="flex-grow pb-20 md:pb-0">
