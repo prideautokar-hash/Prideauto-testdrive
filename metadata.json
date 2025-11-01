@@ -1,0 +1,5 @@
+{
+  "name": "V1 Test Drive Booker",
+  "description": "An application for scheduling and managing car test drives. It provides calendar, slot, and car usage views, along with a dashboard for analytics.",
+  "requestFramePermissions": []
+}
