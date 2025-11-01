@@ -2,8 +2,8 @@
 import { Booking, Branch, CarModel } from '../types';
 
 // --- Start of Mock Backend Logic ---
-// This logic is moved from api/index.ts to run directly in the client.
-// This avoids network errors (Failed to fetch) in a serverless environment.
+// This logic runs directly in the client to avoid network errors
+// in this demonstration environment.
 
 // In-memory store for bookings.
 let bookings: Booking[] = [
@@ -58,11 +58,19 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 export const login = async (username: string, password: string): Promise<{ token: string }> => {
   await delay(500); // Simulate network latency
 
-  // WARNING: INSECURE plaintext password check for demonstration purposes ONLY.
-  // In a real application, you MUST hash passwords.
-  if (username === 'admin' && password === 'password') {
+  // --- MOCK LOGIN LOGIC ---
+  // This is a simple, direct text comparison.
+  // It checks if the provided username is exactly "admin" AND the password is exactly "password".
+  // This has no connection to any database or password hashing. It's for demonstration only.
+  
+  const isUsernameCorrect = username === 'admin';
+  const isPasswordCorrect = password === 'password';
+
+  if (isUsernameCorrect && isPasswordCorrect) {
+    // If both match, the login is successful.
     return Promise.resolve({ token: 'fake-jwt-token-for-client-side-demo' });
   } else {
+    // If either one does not match, the login fails.
     return Promise.reject(new Error('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
   }
 };
