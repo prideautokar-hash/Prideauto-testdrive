@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Booking, CarModel } from '../types';
+import { Booking } from '../types';
 import { TIME_SLOTS } from '../constants';
 
 interface SlotViewProps {
@@ -11,32 +10,41 @@ interface SlotViewProps {
 }
 
 const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal }) => {
-  const dateStr = selectedDate.toISOString().split('T')[0];
-  const bookingsForDate = bookings.filter(b => b.date === dateStr);
+  // Ensure date string is in YYYY-MM-DD format, compensating for timezone
+  const tzoffset = selectedDate.getTimezoneOffset() * 60000;
+  const localISOTime = (new Date(selectedDate.getTime() - tzoffset)).toISOString().split('T')[0];
+  
+  const bookingsForDate = bookings.filter(b => b.date === localISOTime);
 
-  const getSlotColor = (count: number) => {
-    if (count === 0) return 'bg-green-100 border-green-200';
-    if (count === 1) return 'bg-red-100 border-red-200';
-    return 'bg-red-200 border-red-300';
+  const getSlotColorClasses = (count: number): string => {
+    if (count === 0) return 'bg-green-100 hover:bg-green-200 border-green-300';
+    if (count === 1) return 'bg-red-100 hover:bg-red-200 border-red-300';
+    return 'bg-red-200 hover:bg-red-300 border-red-400'; // Darker red
   };
   
-  const getTextColor = (count: number) => {
+  const getTextColorClasses = (count: number): string => {
     if (count === 0) return 'text-green-800';
     return 'text-red-800';
   }
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-700 mb-2 md:mb-0">Slot การจอง</h2>
+      <div className="bg-white p-4 rounded-lg shadow flex flex-col md:flex-row justify-between items-center gap-4">
+        <h2 className="text-xl font-bold text-gray-700">
+          Slot การจองสำหรับวันที่ {selectedDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </h2>
         <input 
           type="date" 
-          value={dateStr}
-          onChange={e => setSelectedDate(new Date(e.target.value))}
+          value={localISOTime}
+          onChange={e => {
+              // Ensure we parse the date as local time, not UTC
+              const parts = e.target.value.split('-').map(p => parseInt(p, 10));
+              setSelectedDate(new Date(parts[0], parts[1] - 1, parts[2]));
+          }}
           className="border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {TIME_SLOTS.map(slot => {
           const bookingsInSlot = bookingsForDate.filter(b => b.timeSlot === slot);
           const bookingCount = bookingsInSlot.length;
@@ -44,22 +52,22 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
           return (
             <div 
               key={slot} 
-              className={`p-4 rounded-lg border cursor-pointer transition-transform transform hover:scale-105 ${getSlotColor(bookingCount)}`}
-              onClick={() => openBookingModal({ date: dateStr, timeSlot: slot })}
+              className={`p-4 rounded-lg border-2 cursor-pointer transition-transform transform hover:-translate-y-1 ${getSlotColorClasses(bookingCount)}`}
+              onClick={() => openBookingModal({ date: localISOTime, timeSlot: slot })}
             >
-              <h3 className={`text-lg font-bold ${getTextColor(bookingCount)}`}>{slot}</h3>
-              {bookingCount > 0 ? (
-                <div className="mt-2 space-y-1">
-                  {bookingsInSlot.map(b => (
-                    <div key={b.id} className="text-sm text-gray-700">
-                      <p className="font-semibold">{b.carModel}</p>
-                      <p>{b.customerName}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className={`mt-2 ${getTextColor(bookingCount)}`}>ว่าง</p>
-              )}
+              <h3 className={`text-lg font-bold ${getTextColorClasses(bookingCount)}`}>{slot}</h3>
+              <div className="mt-2 space-y-2 min-h-[4rem]">
+                {bookingCount > 0 ? (
+                    bookingsInSlot.map(b => (
+                        <div key={b.id} className="text-sm text-gray-800 bg-white/50 rounded p-1.5">
+                            <p className="font-semibold truncate">{b.carModel}</p>
+                            <p className="text-gray-600 truncate">ลูกค้า: {b.customerName}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p className={`mt-2 text-center font-semibold ${getTextColorClasses(bookingCount)}`}>ว่าง</p>
+                )}
+              </div>
             </div>
           );
         })}
