@@ -76,11 +76,17 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
   const carUsageStatus = useMemo(() => {
     const statusMap = new Map<CarModel, boolean>();
     CAR_MODELS.forEach(model => statusMap.set(model, false));
+    
     bookingsForSelectedDate.forEach(booking => {
         statusMap.set(booking.carModel, true);
     });
+
+    unavailabilityForSelectedDate.forEach(unavail => {
+        statusMap.set(unavail.carModel, true);
+    });
+
     return statusMap;
-  }, [bookingsForSelectedDate]);
+  }, [bookingsForSelectedDate, unavailabilityForSelectedDate]);
 
   const thaiDateFormat = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',
@@ -101,8 +107,10 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
             type="date"
             value={selectedDateStringForInput}
             onChange={(e) => {
-                const [year, month, day] = e.target.value.split('-').map(Number);
-                setSelectedDate(new Date(year, month - 1, day));
+                if (e.target.value) {
+                    const [year, month, day] = e.target.value.split('-').map(Number);
+                    setSelectedDate(new Date(year, month - 1, day));
+                }
             }}
             className="border border-gray-300 rounded-md shadow-sm p-2"
         />
