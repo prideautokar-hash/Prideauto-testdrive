@@ -35,6 +35,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
     });
     return map;
   }, [bookings]);
+  
+  const bookingsForSelectedDate = useMemo(() => {
+    const dateStr = toYYYYMMDD(selectedDate);
+    return bookingsByDate.get(dateStr)?.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)) || [];
+  }, [bookingsByDate, selectedDate]);
 
   const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
   
@@ -75,30 +80,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
       cells.push(
         <div 
           key={day}
-          className={`border-t border-gray-200 p-1 h-24 md:h-28 flex flex-col cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+          className={`border-t border-gray-200 p-1 h-20 flex flex-col cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
           onClick={() => setSelectedDate(date)}
         >
-          <span className={`self-end font-medium text-sm p-1 rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'text-gray-700'}`}>{day}</span>
+          <span className={`self-end font-medium text-sm p-1 rounded-full w-6 h-6 flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'text-gray-700'}`}>{day}</span>
           
-          {/* Mobile view with dots */}
-          <div className="md:hidden flex-grow mt-1 space-x-1 flex items-center justify-center flex-wrap px-1">
-             {dayBookings.slice(0, 3).map(b => (
-                 <div key={b.id} className="w-2 h-2 bg-blue-400 rounded-full"></div>
-             ))}
-             {dayBookings.length > 3 && (
-                 <span className="text-gray-500 text-[10px] leading-none">+{dayBookings.length - 3}</span>
-             )}
-          </div>
-          
-          {/* Desktop view with pills */}
-          <div className="hidden md:block flex-grow overflow-y-auto text-xs mt-1 space-y-1">
-             {dayBookings.slice(0, 2).map(b => (
-                 <div key={b.id} className="bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 truncate" title={`${b.customerName} - ${b.carModel}`}>{b.customerName}</div>
-             ))}
-             {dayBookings.length > 2 && (
-                 <div className="text-gray-500 text-center">+{dayBookings.length - 2} more</div>
-             )}
-          </div>
+          {dayBookings.length > 0 && (
+            <div className="flex-grow flex items-center justify-center">
+              <p className="text-green-600 font-bold text-xl flex items-baseline gap-1">
+                {dayBookings.length}
+                <span className="text-xs font-medium text-gray-500">คิว</span>
+              </p>
+            </div>
+          )}
         </div>
       );
     }
@@ -122,6 +116,36 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
         {renderHeader()}
         {renderDays()}
         {renderCells()}
+      </div>
+
+      <div className="mt-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          สรุปการจอง: {selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </h3>
+        {bookingsForSelectedDate.length > 0 ? (
+          <div className="bg-white rounded-lg border shadow">
+            <ul className="divide-y divide-gray-200">
+              {bookingsForSelectedDate.map(booking => (
+                <li key={booking.id} className="p-4 hover:bg-gray-50 transition-colors duration-150">
+                  <div className="flex items-start justify-between gap-4">
+                      <div>
+                          <p className="font-semibold text-gray-800">{booking.timeSlot} - {booking.customerName}</p>
+                          <p className="text-sm text-gray-600">{booking.carModel}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                          <p className="text-sm text-gray-500">เซลล์</p>
+                          <p className="text-sm font-medium text-gray-800">{booking.salesperson}</p>
+                      </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-lg border shadow text-center">
+            <p className="text-gray-500">ไม่มีการจองสำหรับวันที่เลือก</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -103,7 +103,17 @@ const App: React.FC = () => {
         }
     };
 
-    const NavItem = ({ page, label, icon }: { page: Page, label: string, icon: React.ReactNode }) => (
+    const DesktopNavItem = ({ page, label, icon }: { page: Page, label: string, icon: React.ReactNode }) => (
+        <button
+            onClick={() => setCurrentPage(page)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-200 ${currentPage === page ? 'bg-white/20 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+        >
+            {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+            <span className="text-sm font-medium">{label}</span>
+        </button>
+    );
+
+    const MobileNavItem = ({ page, label, icon }: { page: Page, label: string, icon: React.ReactNode }) => (
         <button
             onClick={() => setCurrentPage(page)}
             className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${currentPage === page ? 'text-white' : 'text-blue-200 hover:text-white'}`}
@@ -119,25 +129,25 @@ const App: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            {/* Desktop sidebar */}
-            <nav style={{ backgroundColor: '#98B6D7' }} className="hidden md:flex fixed top-0 left-0 h-screen w-24 flex-col items-center justify-between py-6 z-20">
-                <div className="flex flex-col items-center w-full space-y-4">
-                    <div className="p-2 w-full">
-                         <Logo className="w-full h-10" />
-                         <span className="block text-center text-blue-100 text-xs mt-2">{currentBranch}</span>
-                    </div>
-                    <NavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-7 h-7" />} />
-                    <NavItem page="slots" label="Slots" icon={<ListIcon className="w-7 h-7" />} />
-                    <NavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-7 h-7" />} />
-                    <NavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-7 h-7" />} />
+            {/* Desktop top nav */}
+            <header style={{ backgroundColor: '#98B6D7' }} className="hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-md z-20">
+                <div className="flex items-center gap-4">
+                    <Logo className="h-10 w-24" />
+                     <span className="text-blue-100 text-sm font-medium">สาขา: {currentBranch}</span>
                 </div>
-                 <button onClick={handleLogout} className="text-blue-200 hover:text-white p-2 text-xs w-full">
+                <nav className="flex items-center gap-2">
+                    <DesktopNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon />} />
+                    <DesktopNavItem page="slots" label="Slots" icon={<ListIcon />} />
+                    <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
+                    <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
+                </nav>
+                 <button onClick={handleLogout} className="text-blue-200 hover:text-white text-sm font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md">
                     ออกจากระบบ
                 </button>
-            </nav>
+            </header>
 
             {/* Content area */}
-            <div className="md:pl-24">
+            <div className="md:pt-16">
                 <header style={{ backgroundColor: '#98B6D7' }} className="text-white p-4 shadow-md sticky top-0 z-10 md:hidden">
                     <div className="flex justify-between items-center w-full">
                         <Logo className="h-10 w-24" />
@@ -156,10 +166,10 @@ const App: React.FC = () => {
 
             {/* Mobile bottom nav */}
             <nav style={{ backgroundColor: '#98B6D7' }} className="fixed bottom-0 left-0 right-0 h-16 shadow-lg flex justify-around items-center md:hidden z-20">
-                <NavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-6 h-6" />} />
-                <NavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
-                <NavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
-                <NavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
+                <MobileNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-6 h-6" />} />
+                <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
+                <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
+                <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             
             <BookingModal 
