@@ -26,3 +26,11 @@ export const addBooking = async (
     method: 'POST'
   });
 };
+
+export const deleteBooking = async (bookingId: string, token: string): Promise<void> => {
+  return apiClient<void>('bookings', {
+    data: { id: bookingId },
+    token,
+    method: 'DELETE',
+  });
+};

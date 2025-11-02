@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { Booking } from '../types';
+import { TrashIcon } from './icons';
 
 interface CalendarViewProps {
   bookings: Booking[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   openBookingModal: (data?: Partial<Booking>) => void;
+  onDeleteBooking: (bookingId: string) => void;
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -17,7 +19,7 @@ const toYYYYMMDD = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
@@ -147,15 +149,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
           <div className="bg-white rounded-lg border shadow">
             <ul className="divide-y divide-gray-200">
               {bookingsForSelectedDate.map(booking => (
-                <li key={booking.id} className="p-4 hover:bg-gray-50 transition-colors duration-150">
-                  <div className="flex items-start justify-between gap-4">
+                <li key={booking.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 group">
+                  <div className="flex items-center justify-between gap-4">
                       <div>
-                          <p className="font-semibold text-gray-800">{booking.timeSlot} - {booking.customerName}</p>
+                          <p className="font-semibold text-gray-800">{booking.timeSlot} - <span className="text-gray-500 font-medium">ลูกค้า:</span> {booking.customerName}</p>
                           <p className="text-sm text-gray-600">{booking.carModel}</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                          <p className="text-sm text-gray-500">เซลล์</p>
-                          <p className="text-sm font-medium text-gray-800">{booking.salesperson}</p>
+                      <div className="text-right flex-shrink-0 flex items-center gap-2">
+                          <div>
+                            <p className="text-sm text-gray-500">เซลล์</p>
+                            <p className="text-sm font-medium text-gray-800">{booking.salesperson}</p>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteBooking(booking.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full"
+                            title="ลบการจอง"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
                       </div>
                   </div>
                 </li>

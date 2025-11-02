@@ -11,7 +11,7 @@ async function apiClient<T>(
   { data, token, headers: customHeaders, ...customConfig }: ApiOptions = {},
 ): Promise<T> {
   const config: RequestInit = {
-    method: data ? 'POST' : 'GET',
+    method: customConfig.method || (data ? 'POST' : 'GET'),
     body: data ? JSON.stringify(data) : undefined,
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),

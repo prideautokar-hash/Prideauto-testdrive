@@ -20,7 +20,11 @@ async function parseJSONBody(req: IncomingMessage): Promise<any> {
         req.on('data', chunk => body += chunk.toString());
         req.on('end', () => {
             try {
-                resolve(JSON.parse(body));
+                if (body) {
+                    resolve(JSON.parse(body));
+                } else {
+                    resolve({}); // Resolve with empty object for requests with no body
+                }
             } catch (e) {
                 reject(new Error('Invalid JSON body'));
             }
@@ -53,7 +57,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
     if (req.method === 'OPTIONS') {
         res.writeHead(204, {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         });
         res.end();
@@ -190,6 +194,16 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                     await client.query('COMMIT');
                     sendResponse(res, 201, newBookingResult.rows[0]);
+                } else if (req.method === 'DELETE') {
+                    const { id } = await parseJSONBody(req);
+                    if (!id) {
+                        return sendResponse(res, 400, { message: 'Booking ID is required' });
+                    }
+                    const deleteResult = await client.query('DELETE FROM public.bookings WHERE id = $1', [id]);
+                    if (deleteResult.rowCount === 0) {
+                        return sendResponse(res, 404, { message: 'Booking not found' });
+                    }
+                    sendResponse(res, 200, { message: 'Booking deleted successfully' });
                 }
             } catch (err) {
                  await client.query('ROLLBACK');

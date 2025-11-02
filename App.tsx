@@ -7,7 +7,7 @@ import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-import { getBookings, addBooking } from './services/apiService';
+import { getBookings, addBooking, deleteBooking } from './services/apiService';
 import { Logo } from './components/Logo';
 
 type Page = 'calendar' | 'slots' | 'usage' | 'dashboard';
@@ -64,6 +64,21 @@ const App: React.FC = () => {
             alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         }
     };
+    
+    const handleDeleteBooking = async (bookingId: string) => {
+        if (!currentBranch || !authToken) return;
+
+        if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบการจองนี้?')) {
+            try {
+                await deleteBooking(bookingId, authToken);
+                fetchBookings(currentBranch, authToken);
+            } catch (err: any) {
+                console.error(err);
+                alert(err.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
+            }
+        }
+    };
+
 
     const handleLoginSuccess = (branch: Branch, token: string) => {
         localStorage.setItem('authToken', token);
@@ -91,9 +106,9 @@ const App: React.FC = () => {
 
         switch (currentPage) {
             case 'calendar':
-                return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} />;
+                return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
             case 'slots':
-                return <SlotView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} />;
+                return <SlotView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
             case 'usage':
                 return <CarUsageView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
             case 'dashboard':

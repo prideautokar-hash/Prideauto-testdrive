@@ -1,12 +1,14 @@
 import React, { useMemo } from 'react';
 import { Booking } from '../types';
 import { TIME_SLOTS } from '../constants';
+import { TrashIcon } from './icons';
 
 interface SlotViewProps {
   bookings: Booking[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   openBookingModal: (data?: Partial<Booking>) => void;
+  onDeleteBooking: (bookingId: string) => void;
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -19,7 +21,7 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 
-const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal }) => {
+const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
 
@@ -102,10 +104,20 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
                         {slotBookings.length > 0 ? (
                             <ul className="space-y-3">
                                {slotBookings.map(booking => (
-                                   <li key={booking.id} className="text-sm">
-                                       <p className="font-semibold">{booking.customerName}</p>
+                                   <li key={booking.id} className="text-sm group relative bg-white/40 p-2 rounded">
+                                       <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
                                        <p className="text-gray-700">{booking.carModel}</p>
                                        <p className="text-xs text-gray-500 mt-1">เซลล์: {booking.salesperson}</p>
+                                       <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteBooking(booking.id);
+                                          }}
+                                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full bg-white/50"
+                                          title="ลบการจอง"
+                                       >
+                                         <TrashIcon className="w-4 h-4" />
+                                       </button>
                                    </li>
                                ))}
                             </ul>
