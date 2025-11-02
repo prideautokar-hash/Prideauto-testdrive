@@ -5,22 +5,29 @@ interface SqlEditorViewProps {
     authToken: string;
 }
 
-const DEFAULT_QUERY = `-- This query creates the table needed for the "Unavailable Cars" feature.
--- Press 'Execute' to run it. Make sure you have already created the 'app_settings' table.
-CREATE TABLE car_unavailability (
+const DEFAULT_QUERY = `-- This query creates the table for the "Unavailable Cars" feature.
+-- If the table already exists, it will be dropped and recreated.
+-- Press 'Execute' to run it.
+DROP TABLE IF EXISTS public.car_unavailability;
+
+CREATE TABLE public.car_unavailability (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    car_id UUID NOT NULL REFERENCES cars(id),
-    branch_id UUID NOT NULL REFERENCES branches(id),
+    -- FIX: Changed car_id from UUID to INTEGER to match the 'cars' table's primary key type.
+    car_id INTEGER NOT NULL REFERENCES public.cars(id) ON DELETE CASCADE,
+    branch_id UUID NOT NULL REFERENCES public.branches(id) ON DELETE CASCADE,
     unavailability_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     reason TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    created_by_user_id UUID REFERENCES users(id)
+    created_by_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL
 );
 
 -- Optional: Add an index for faster lookups
-CREATE INDEX idx_car_unavailability_date ON car_unavailability(car_id, unavailability_date);
+CREATE INDEX idx_car_unavailability_date ON public.car_unavailability(car_id, unavailability_date);
+
+-- Grant permissions to the application user if needed (replace 'your_app_user')
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON public.car_unavailability TO your_app_user;
 `;
 
 const SqlEditorView: React.FC<SqlEditorViewProps> = ({ authToken }) => {
