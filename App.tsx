@@ -148,7 +148,8 @@ const App: React.FC = () => {
     const DesktopNavItem = ({ page, label, icon }: { page: Page, label: string, icon: React.ReactNode }) => (
         <button
             onClick={() => setCurrentPage(page)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-200 ${currentPage === page ? 'bg-white/20 text-white' : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-200 ${currentPage === page ? 'font-semibold bg-blue-50' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
+            style={{ color: currentPage === page ? '#7D9AB9' : undefined }}
         >
             {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
             <span className="text-sm font-medium">{label}</span>
@@ -172,10 +173,10 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Desktop top nav */}
-            <header style={{ backgroundColor: '#98B6D7' }} className="hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-md z-20">
+            <header className="bg-white border-b hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-sm z-20">
                 <div className="flex items-center gap-4">
                     <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
-                     <span className="text-blue-100 text-sm font-medium">สาขา: {currentBranch}</span>
+                     <span className="text-gray-600 text-sm font-medium">สาขา: {currentBranch}</span>
                 </div>
                 <nav className="flex items-center gap-2">
                     <DesktopNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon />} />
@@ -183,19 +184,19 @@ const App: React.FC = () => {
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                 </nav>
-                 <button onClick={handleLogout} className="text-blue-200 hover:text-white text-sm font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md">
+                 <button onClick={handleLogout} className="text-gray-600 hover:text-gray-800 text-sm font-medium bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md transition-colors">
                     ออกจากระบบ
                 </button>
             </header>
 
             {/* Content area */}
             <div className="md:pt-16">
-                <header style={{ backgroundColor: '#98B6D7' }} className="text-white p-4 shadow-md sticky top-0 z-10 md:hidden">
+                <header className="bg-white p-4 shadow-sm sticky top-0 z-10 md:hidden border-b">
                     <div className="flex justify-between items-center w-full">
                         <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
                         <div className="text-right">
-                           <p className="text-sm font-semibold text-white">สาขา: {currentBranch}</p>
-                           <button onClick={handleLogout} className="text-white bg-white/20 px-2 py-0.5 rounded text-xs mt-1">
+                           <p className="text-sm font-semibold text-gray-600">สาขา: {currentBranch}</p>
+                           <button onClick={handleLogout} className="text-gray-500 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded text-xs mt-1 transition-colors">
                                ออกจากระบบ
                            </button>
                         </div>
