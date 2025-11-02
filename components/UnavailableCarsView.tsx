@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { CarModel, Unavailability } from '../types';
+import { Booking, CarModel, Unavailability } from '../types';
 import { TrashIcon } from './icons';
 
 interface UnavailableCarsViewProps {
+    bookings: Booking[];
     unavailability: Unavailability[];
     selectedDate: Date;
     setSelectedDate: (date: Date) => void;
@@ -21,6 +22,7 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
+    bookings,
     unavailability,
     selectedDate,
     setSelectedDate,
@@ -48,6 +50,30 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
             setError('กรุณาเลือกข้อมูลให้ครบถ้วน');
             return;
         }
+
+        // --- Client-side Conflict Check ---
+        let startTime, endTime;
+        if (period === 'morning') {
+            startTime = '08:00'; endTime = '13:00';
+        } else if (period === 'afternoon') {
+            startTime = '13:00'; endTime = '17:00';
+        } else { // all-day
+            startTime = '08:00'; endTime = '17:00';
+        }
+
+        const conflictingBooking = bookings.find(booking =>
+            booking.carModel === selectedCarModel &&
+            booking.date === selectedDateString &&
+            booking.timeSlot >= startTime &&
+            booking.timeSlot < endTime
+        );
+
+        if (conflictingBooking) {
+            setError(`มีคิวจอง Test Drive สำหรับรถคันนี้เวลา ${conflictingBooking.timeSlot} กรุณายกเลิกก่อน`);
+            return;
+        }
+        // --- End of Conflict Check ---
+
         onAddUnavailability(selectedCarModel, selectedDateString, period, reason);
         // Reset form
         setReason('');

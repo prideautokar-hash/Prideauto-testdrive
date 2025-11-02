@@ -200,6 +200,7 @@ const App: React.FC = () => {
                 return <DashboardView bookings={bookings} />;
             case 'unavailable':
                 return <UnavailableCarsView 
+                            bookings={bookings}
                             unavailability={unavailability} 
                             selectedDate={selectedDate} 
                             setSelectedDate={setSelectedDate} 

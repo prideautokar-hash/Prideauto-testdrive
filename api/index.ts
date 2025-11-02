@@ -247,6 +247,19 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     } else {
                         return sendResponse(res, 400, { message: 'Invalid period specified.' });
                     }
+
+                    // --- CONFLICT CHECK ---
+                    const bookingConflictResult = await client.query(
+                        `SELECT to_char(booking_time, 'HH24:MI') as time FROM public.bookings
+                         WHERE car_id = $1 AND branch_id = $2 AND booking_date = $3
+                         AND (booking_time, booking_time + '29 minutes'::interval) OVERLAPS ($4::time, $5::time)
+                         LIMIT 1`,
+                        [carId, branchId, date, startTime, endTime]
+                    );
+
+                    if (bookingConflictResult.rows.length > 0) {
+                        return sendResponse(res, 409, { message: `ไม่สามารถแจ้งรถไม่พร้อมใช้งานได้ เนื่องจากมีคิวจอง Test Drive อยู่ในช่วงเวลานี้ กรุณายกเลิกการจองก่อน` });
+                    }
                     
                     const newUnavailability = await client.query(
                         `INSERT INTO public.car_unavailability (car_id, branch_id, unavailability_date, start_time, end_time, reason, created_by_user_id)
