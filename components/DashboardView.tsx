@@ -189,9 +189,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                 <div className="bg-white p-6 rounded-lg shadow border">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">สัดส่วนการ Test Drive ตามรุ่นรถ</h3>
                     <div className="flex justify-center items-center gap-2 mb-4 bg-gray-100 p-1 rounded-lg">
-                        <ChartButton label="วันนี้" period="day" current={pieChartPeriod} setter={setPieChartPeriod} />
-                        <ChartButton label="เดือนนี้" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
-                        <ChartButton label="ปีนี้" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
+                        <ChartButton label="วัน" period="day" current={pieChartPeriod} setter={setPieChartPeriod} />
+                        <ChartButton label="เดือน" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
+                        <ChartButton label="ปี" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
                     </div>
                     <div style={{ width: '100%', height: 300 }}>
                          {pieChartData.length > 0 ? (
