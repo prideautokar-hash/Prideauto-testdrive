@@ -27,7 +27,7 @@ const App: React.FC = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalInitialData, setModalInitialData] = useState<Partial<Booking> | undefined>(undefined);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // Start with loading true
     const [error, setError] = useState<string | null>(null);
     const [appLogo, setAppLogo] = useState<string | null>(null);
 
@@ -35,27 +35,42 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const [bookingsData, unavailabilityData] = await Promise.all([
+            const results = await Promise.allSettled([
                 getBookings(branch, token),
-                getUnavailability(branch, token)
+                getUnavailability(branch, token),
+                getAppSetting('app_logo', token)
             ]);
-            setBookings(bookingsData);
-            setUnavailability(unavailabilityData);
+
+            const bookingsResult = results[0];
+            const unavailabilityResult = results[1];
+            const appLogoResult = results[2];
+
+            if (bookingsResult.status === 'fulfilled') {
+                setBookings(bookingsResult.value);
+            } else {
+                console.error('Failed to fetch bookings:', bookingsResult.reason);
+                setError('ไม่สามารถดึงข้อมูลการจองได้');
+            }
+
+            if (unavailabilityResult.status === 'fulfilled') {
+                setUnavailability(unavailabilityResult.value);
+            } else {
+                console.warn('Failed to fetch unavailability, defaulting to empty:', unavailabilityResult.reason);
+                setUnavailability([]); // Gracefully fail
+            }
+            
+            if (appLogoResult.status === 'fulfilled') {
+                setAppLogo(appLogoResult.value.value);
+            } else {
+                 console.warn("App logo not found or couldn't be fetched.", appLogoResult.reason);
+                 setAppLogo(null);
+            }
+
         } catch (err) {
-            setError('ไม่สามารถดึงข้อมูลได้');
+            setError('เกิดข้อผิดพลาดที่ไม่คาดคิด');
             console.error(err);
         } finally {
             setIsLoading(false);
-        }
-    }, []);
-
-    const fetchAppSettings = useCallback(async (token: string) => {
-        try {
-            const { value } = await getAppSetting('app_logo', token);
-            setAppLogo(value);
-        } catch (err) {
-            console.log("App logo not found or couldn't be fetched.");
-            setAppLogo(null);
         }
     }, []);
 
@@ -69,9 +84,10 @@ const App: React.FC = () => {
             setCurrentBranch(storedBranch);
             setIsUserAdmin(storedIsAdmin);
             fetchData(storedBranch, storedToken);
-            fetchAppSettings(storedToken);
+        } else {
+            setIsLoading(false); // Not logged in, stop loading
         }
-    }, [fetchData, fetchAppSettings]);
+    }, [fetchData]);
 
     const openBookingModal = useCallback((data?: Partial<Booking>) => {
         setModalInitialData(data);
@@ -138,7 +154,6 @@ const App: React.FC = () => {
         setCurrentBranch(branch);
         setIsUserAdmin(isAdmin);
         fetchData(branch, token);
-        fetchAppSettings(token);
     };
 
     const handleLogout = () => {

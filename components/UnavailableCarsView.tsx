@@ -57,26 +57,29 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
         <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
                 <h1 className="text-3xl font-bold text-gray-800">รถไม่พร้อมใช้งาน</h1>
-                <input
-                    type="date"
-                    value={selectedDateString}
-                    onChange={(e) => {
-                        if (e.target.value) {
-                            const [year, month, day] = e.target.value.split('-').map(Number);
-                            setSelectedDate(new Date(year, month - 1, day));
-                        }
-                    }}
-                    className="border border-gray-300 rounded-md shadow-sm p-2"
-                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Form Section */}
                 <div className="lg:col-span-1">
                     <div className="bg-white p-6 rounded-lg shadow border">
-                        <h2 className="text-xl font-bold text-gray-800 mb-4">เพิ่มรายการ</h2>
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">แจ้งรถไม่พร้อมใช้งาน</h2>
                         {error && <p className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">{error}</p>}
                         <form onSubmit={handleSubmit} className="space-y-4">
+                             <div>
+                                <label className="block text-sm font-medium text-gray-700">วันที่</label>
+                                <input
+                                    type="date"
+                                    value={selectedDateString}
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            const [year, month, day] = e.target.value.split('-').map(Number);
+                                            setSelectedDate(new Date(year, month - 1, day));
+                                        }
+                                    }}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">รุ่นรถ</label>
                                 <select value={selectedCarModel} onChange={e => setSelectedCarModel(e.target.value as CarModel)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
