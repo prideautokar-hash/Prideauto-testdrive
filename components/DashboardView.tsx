@@ -161,7 +161,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                         <ChartButton label="เดือนนี้" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
                         <ChartButton label="ปีนี้" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
                     </div>
-                    <div style={{ width: '100%', height: 300 }}>
+                    <div style={{ width: '100%', height: 300, fontSize: '12px' }}>
                          {pieChartData.length > 0 ? (
                             <ResponsiveContainer>
                                 <PieChart>
@@ -174,7 +174,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                                         fill="#8884d8"
                                         dataKey="value"
                                         nameKey="name"
-                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        label={({ name, percent }) => `${name.replace('BYD ', '')} ${(percent * 100).toFixed(0)}%`}
                                     >
                                         {pieChartData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
