@@ -21,7 +21,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
   const [salesperson, setSalesperson] = useState('');
   const [error, setError] = useState('');
   const [availableCarModels, setAvailableCarModels] = useState<CarModel[]>(CAR_MODELS);
+  const [isTimeSlotEditable, setIsTimeSlotEditable] = useState(true);
 
+  // Effect to initialize form state when modal opens
   useEffect(() => {
     if (initialData && isOpen) {
       setCustomerName(initialData.customerName || '');
@@ -32,28 +34,40 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
       setTimeSlot(initialTimeSlot);
       setNotes(initialData.notes || '');
       setSalesperson(initialData.salesperson || '');
-
-      const bookedCarModelsInSlot = new Set(
-          bookings
-              .filter(b => b.date === initialDate && b.timeSlot === initialTimeSlot)
-              .map(b => b.carModel)
-      );
-
-      const unavailableCarModelsInSlot = new Set(
-          unavailability
-              .filter(u => u.date === initialDate && initialTimeSlot >= u.startTime && initialTimeSlot < u.endTime)
-              .map(u => u.carModel)
-      );
-
-      const availableModels = CAR_MODELS.filter(m => 
-          !bookedCarModelsInSlot.has(m) && !unavailableCarModelsInSlot.has(m)
-      );
       
-      setAvailableCarModels(availableModels);
-      setCarModel(availableModels[0] || (initialData.carModel || CAR_MODELS[0]));
-      
+      // Time slot is only editable if it wasn't pre-filled from the Slot view
+      setIsTimeSlotEditable(!initialData.timeSlot);
     }
-  }, [initialData, isOpen, bookings, unavailability]);
+  }, [initialData, isOpen]);
+
+  // Effect to update available car models whenever the date or time slot changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const bookedCarModelsInSlot = new Set(
+        bookings
+            .filter(b => b.date === date && b.timeSlot === timeSlot)
+            .map(b => b.carModel)
+    );
+
+    const unavailableCarModelsInSlot = new Set(
+        unavailability
+            .filter(u => u.date === date && timeSlot >= u.startTime && timeSlot < u.endTime)
+            .map(u => u.carModel)
+    );
+
+    const availableModels = CAR_MODELS.filter(m => 
+        !bookedCarModelsInSlot.has(m) && !unavailableCarModelsInSlot.has(m)
+    );
+    
+    setAvailableCarModels(availableModels);
+    
+    // If the previously selected car model is no longer available,
+    // switch to the first available one. Otherwise, keep the selection.
+    if (!availableModels.includes(carModel)) {
+      setCarModel(availableModels[0] || CAR_MODELS[0]);
+    }
+  }, [isOpen, date, timeSlot, bookings, unavailability]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +105,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     setSalesperson('');
     setError('');
     setAvailableCarModels(CAR_MODELS);
+    setIsTimeSlotEditable(true); // Reset state
     onClose();
   }
 
@@ -118,7 +133,22 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">เวลา*</label>
-                 <input type="text" value={timeSlot} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readOnly/>
+                {isTimeSlotEditable ? (
+                    <select
+                        value={timeSlot}
+                        onChange={e => setTimeSlot(e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        {TIME_SLOTS.map(slot => <option key={slot} value={slot}>{slot}</option>)}
+                    </select>
+                ) : (
+                    <input 
+                        type="text" 
+                        value={timeSlot} 
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100" 
+                        readOnly
+                    />
+                )}
               </div>
             </div>
             <div>
