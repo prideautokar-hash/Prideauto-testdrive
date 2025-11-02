@@ -21,7 +21,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
   const [salesperson, setSalesperson] = useState('');
   const [error, setError] = useState('');
   const [availableCarModels, setAvailableCarModels] = useState<CarModel[]>(CAR_MODELS);
-  const [isTimeSlotEditable, setIsTimeSlotEditable] = useState(true);
 
   // Effect to initialize form state when modal opens
   useEffect(() => {
@@ -34,9 +33,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
       setTimeSlot(initialTimeSlot);
       setNotes(initialData.notes || '');
       setSalesperson(initialData.salesperson || '');
-      
-      // Time slot is only editable if it wasn't pre-filled from the Slot view
-      setIsTimeSlotEditable(!initialData.timeSlot);
     }
   }, [initialData, isOpen]);
 
@@ -104,8 +100,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     setNotes('');
     setSalesperson('');
     setError('');
-    setAvailableCarModels(CAR_MODELS);
-    setIsTimeSlotEditable(true); // Reset state
     onClose();
   }
 
@@ -129,26 +123,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">วันที่*</label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readOnly/>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">เวลา*</label>
-                {isTimeSlotEditable ? (
-                    <select
-                        value={timeSlot}
-                        onChange={e => setTimeSlot(e.target.value)}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                        {TIME_SLOTS.map(slot => <option key={slot} value={slot}>{slot}</option>)}
-                    </select>
-                ) : (
-                    <input 
-                        type="text" 
-                        value={timeSlot} 
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100" 
-                        readOnly
-                    />
-                )}
+                <select
+                    value={timeSlot}
+                    onChange={e => setTimeSlot(e.target.value)}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                    {TIME_SLOTS.map(slot => <option key={slot} value={slot}>{slot}</option>)}
+                </select>
               </div>
             </div>
             <div>

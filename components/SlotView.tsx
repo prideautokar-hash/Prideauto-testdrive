@@ -119,25 +119,30 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                     <h3 className={`font-bold text-xl mb-3 ${hasBookings ? 'text-red-800' : 'text-gray-700'}`}>{slot}</h3>
                     <div className="flex-grow space-y-3">
                         {hasBookings ? (
-                            <ul className="space-y-3">
-                               {slotBookings.map(booking => (
-                                   <li key={booking.id} className="text-sm group relative bg-red-100 p-2 rounded">
-                                       <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
-                                       <p className="text-gray-700">{booking.carModel}</p>
-                                       <p className="text-xs text-gray-500 mt-1">เซลล์: {booking.salesperson}</p>
-                                       <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            onDeleteBooking(booking.id);
-                                          }}
-                                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full bg-white/50"
-                                          title="ลบการจอง"
-                                       >
-                                         <TrashIcon className="w-4 h-4" />
-                                       </button>
-                                   </li>
-                               ))}
-                            </ul>
+                            <>
+                                <ul className="space-y-3">
+                                   {slotBookings.map(booking => (
+                                       <li key={booking.id} className="text-sm group relative bg-red-100 p-2 rounded">
+                                           <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
+                                           <p className="text-gray-700">{booking.carModel}</p>
+                                           <p className="text-xs text-gray-500 mt-1">เซลล์: {booking.salesperson}</p>
+                                           <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteBooking(booking.id);
+                                              }}
+                                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full bg-white/50"
+                                              title="ลบการจอง"
+                                           >
+                                             <TrashIcon className="w-4 h-4" />
+                                           </button>
+                                       </li>
+                                   ))}
+                                </ul>
+                                {availableCarModels.length > 0 && (
+                                     <button className="w-full text-center py-2 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors text-sm font-medium" onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}>+ เพิ่มการจอง</button>
+                                )}
+                            </>
                         ) : (
                              availableCarModels.length > 0 ? (
                                 <button
