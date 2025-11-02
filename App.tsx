@@ -59,9 +59,9 @@ const App: React.FC = () => {
             await addBooking(newBookingData, currentBranch, authToken);
             fetchBookings(currentBranch, authToken); // Refresh data after saving
             setIsModalOpen(false);
-        } catch(err) {
+        } catch(err: any) {
             console.error(err);
-            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         }
     };
 

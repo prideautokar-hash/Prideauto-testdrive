@@ -114,7 +114,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                             c.name as "customerName", 
                             c.phone_number as "phoneNumber",
                             b.booking_date as "date",
-                            b.booking_time as "timeSlot",
+                            to_char(b.booking_time, 'HH24:MI') as "timeSlot",
                             cr.model_name as "carModel",
                             b.notes,
                             s.name as "salesperson",
@@ -138,6 +138,29 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 } else if (req.method === 'POST') {
                     const { customerName, phoneNumber, date, timeSlot, carModel, notes, salesperson, branch } = await parseJSONBody(req);
                     
+                    // Get IDs for foreign keys and validate inputs
+                    const branchResult = await client.query('SELECT id FROM public.branches WHERE name = $1', [branch]);
+                    if (branchResult.rows.length === 0) {
+                        return sendResponse(res, 400, { message: 'Invalid branch' });
+                    }
+                    const branchId = branchResult.rows[0].id;
+
+                    const carResult = await client.query('SELECT id FROM public.cars WHERE model_name = $1', [carModel]);
+                    if (carResult.rows.length === 0) {
+                        return sendResponse(res, 400, { message: 'Invalid car model' });
+                    }
+                    const carId = carResult.rows[0].id;
+                    
+                    // Check for conflicting bookings
+                    const conflictCheckResult = await client.query(
+                        'SELECT id FROM public.bookings WHERE car_id = $1 AND booking_date = $2 AND booking_time = $3 AND branch_id = $4',
+                        [carId, date, timeSlot, branchId]
+                    );
+                
+                    if (conflictCheckResult.rows.length > 0) {
+                        return sendResponse(res, 409, { message: `รถรุ่นนี้ถูกจองในช่วงเวลา ${timeSlot} แล้ว` });
+                    }
+
                     await client.query('BEGIN');
 
                     // Find or create customer
@@ -149,28 +172,20 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         customerResult = await client.query('INSERT INTO public.customers (name, phone_number) VALUES ($1, $2) RETURNING id', [customerName, phoneNumber || null]);
                         customerId = customerResult.rows[0].id;
                     }
-
-                    // Find branch_id, car_id, salesperson_id
-                    const branchResult = await client.query('SELECT id FROM public.branches WHERE name = $1', [branch]);
-                    const carResult = await client.query('SELECT id FROM public.cars WHERE model_name = $1', [carModel]);
                     
                     // Find or create salesperson
-                    let salespersonResult = await client.query('SELECT id FROM public.salespeople WHERE name = $1 AND branch_id = $2', [salesperson, branchResult.rows[0].id]);
+                    let salespersonResult = await client.query('SELECT id FROM public.salespeople WHERE name = $1 AND branch_id = $2', [salesperson, branchId]);
                      let salespersonId;
                     if (salespersonResult.rows.length > 0) {
                         salespersonId = salespersonResult.rows[0].id;
                     } else {
-                        salespersonResult = await client.query('INSERT INTO public.salespeople (name, branch_id) VALUES ($1, $2) RETURNING id', [salesperson, branchResult.rows[0].id]);
+                        salespersonResult = await client.query('INSERT INTO public.salespeople (name, branch_id) VALUES ($1, $2) RETURNING id', [salesperson, branchId]);
                         salespersonId = salespersonResult.rows[0].id;
-                    }
-
-                    if (branchResult.rows.length === 0 || carResult.rows.length === 0) {
-                       throw new Error('Invalid branch, car, or salesperson');
                     }
 
                     const newBookingResult = await client.query(
                         'INSERT INTO public.bookings (customer_id, car_id, salesperson_id, branch_id, booking_date, booking_time, notes, created_by_user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-                        [customerId, carResult.rows[0].id, salespersonId, branchResult.rows[0].id, date, timeSlot, notes || null, userData.userId]
+                        [customerId, carId, salespersonId, branchId, date, timeSlot, notes || null, userData.userId]
                     );
 
                     await client.query('COMMIT');
