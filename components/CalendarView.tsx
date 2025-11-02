@@ -81,7 +81,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
         <div 
           key={day}
           className={`border-t border-gray-200 p-1 h-20 flex flex-col cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
-          onClick={() => setSelectedDate(date)}
+          onClick={() => {
+            setSelectedDate(date);
+            openBookingModal({ date: toYYYYMMDD(date) });
+          }}
         >
           <span className={`self-end font-medium text-sm p-1 rounded-full w-6 h-6 flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'text-gray-700'}`}>{day}</span>
           
@@ -119,9 +122,27 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
       </div>
 
       <div className="mt-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
-          สรุปการจอง: {selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </h3>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+            <h3 className="text-xl font-bold text-gray-800">
+                สรุปการจอง
+            </h3>
+            <input
+                type="date"
+                value={toYYYYMMDD(selectedDate)}
+                onChange={(e) => {
+                    if (e.target.value) {
+                        const [year, month, day] = e.target.value.split('-').map(Number);
+                        setSelectedDate(new Date(year, month - 1, day));
+                    }
+                }}
+                className="border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                aria-label="เลือกวันที่สำหรับสรุปการจอง"
+            />
+        </div>
+        <p className="text-gray-600 mb-4 -mt-2">
+             {selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </p>
+
         {bookingsForSelectedDate.length > 0 ? (
           <div className="bg-white rounded-lg border shadow">
             <ul className="divide-y divide-gray-200">
