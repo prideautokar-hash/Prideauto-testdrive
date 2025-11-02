@@ -212,7 +212,71 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
             } finally {
                 client.release();
             }
-        } 
+        }
+        // --- SETTINGS ENDPOINT ---
+        else if (url.pathname.endsWith('/settings')) {
+            const userData = verifyToken(req);
+            if (!userData) {
+                return sendResponse(res, 401, { message: 'Authentication required' });
+            }
+            const client = await pool.connect();
+            try {
+                if (req.method === 'GET') {
+                    const key = url.searchParams.get('key');
+                    if (!key) return sendResponse(res, 400, { message: 'Setting key is required' });
+                    
+                    const result = await client.query('SELECT value FROM public.app_settings WHERE key = $1', [key]);
+                    if (result.rows.length > 0) {
+                        sendResponse(res, 200, result.rows[0]);
+                    } else {
+                        sendResponse(res, 404, { message: 'Setting not found' });
+                    }
+                } else if (req.method === 'POST') {
+                    const { key, value } = await parseJSONBody(req);
+                    if (!key || value === undefined) {
+                        return sendResponse(res, 400, { message: 'Key and value are required' });
+                    }
+                    // UPSERT operation
+                    await client.query(
+                        `INSERT INTO public.app_settings (key, value) VALUES ($1, $2)
+                         ON CONFLICT (key) DO UPDATE SET value = $2`,
+                        [key, value]
+                    );
+                    sendResponse(res, 200, { key, value });
+                }
+            } catch (err) {
+                console.error('Settings DB Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
+        // --- SQL EDITOR ENDPOINT ---
+        else if (url.pathname.endsWith('/sql-editor')) {
+            const userData = verifyToken(req);
+            if (!userData) {
+                return sendResponse(res, 401, { message: 'Authentication required' });
+            }
+            const client = await pool.connect();
+            try {
+                if (req.method === 'POST') {
+                    const { query } = await parseJSONBody(req);
+                    if (!query) return sendResponse(res, 400, { message: 'SQL query is required' });
+
+                    const result = await client.query(query);
+                    sendResponse(res, 200, { 
+                        command: result.command,
+                        rowCount: result.rowCount,
+                        rows: result.rows 
+                    });
+                }
+            } catch (err: any) {
+                console.error('SQL Editor Error:', err);
+                sendResponse(res, 400, { message: err.message });
+            } finally {
+                client.release();
+            }
+        }
         else {
             sendResponse(res, 404, { message: 'Not Found' });
         }

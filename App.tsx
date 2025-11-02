@@ -5,12 +5,13 @@ import SlotView from './components/SlotView';
 import CarUsageView from './components/CarUsageView';
 import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
-import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
+import { CalendarIcon, ListIcon, GridIcon, ChartIcon, DatabaseIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-import { getBookings, addBooking, deleteBooking } from './services/apiService';
+import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting } from './services/apiService';
 import { Logo } from './components/Logo';
+import SqlEditorView from './components/SqlEditorView';
 
-type Page = 'calendar' | 'slots' | 'usage' | 'dashboard';
+type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'sql-editor';
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
@@ -22,6 +23,7 @@ const App: React.FC = () => {
     const [modalInitialData, setModalInitialData] = useState<Partial<Booking> | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [appLogo, setAppLogo] = useState<string | null>(null);
 
     const fetchBookings = useCallback(async (branch: Branch, token: string) => {
         setIsLoading(true);
@@ -37,6 +39,17 @@ const App: React.FC = () => {
         }
     }, []);
 
+    const fetchAppSettings = useCallback(async (token: string) => {
+        try {
+            const { value } = await getAppSetting('app_logo', token);
+            setAppLogo(value);
+        } catch (err) {
+            // It's okay if the logo is not found, so we don't set an error state
+            console.log("App logo not found or couldn't be fetched.");
+            setAppLogo(null);
+        }
+    }, []);
+
     useEffect(() => {
         const storedToken = localStorage.getItem('authToken');
         const storedBranch = localStorage.getItem('currentBranch') as Branch;
@@ -44,8 +57,9 @@ const App: React.FC = () => {
             setAuthToken(storedToken);
             setCurrentBranch(storedBranch);
             fetchBookings(storedBranch, storedToken);
+            fetchAppSettings(storedToken);
         }
-    }, [fetchBookings]);
+    }, [fetchBookings, fetchAppSettings]);
 
     const openBookingModal = useCallback((data?: Partial<Booking>) => {
         setModalInitialData(data);
@@ -86,6 +100,7 @@ const App: React.FC = () => {
         setAuthToken(token);
         setCurrentBranch(branch);
         fetchBookings(branch, token);
+        fetchAppSettings(token);
     };
 
     const handleLogout = () => {
@@ -94,6 +109,19 @@ const App: React.FC = () => {
         setAuthToken(null);
         setCurrentBranch(null);
         setBookings([]);
+        setAppLogo(null);
+    };
+    
+    const handleLogoUpload = async (base64String: string) => {
+        if (!authToken) return;
+        try {
+            await setAppSetting('app_logo', base64String, authToken);
+            setAppLogo(base64String);
+            alert("อัปเดตโลโก้สำเร็จ");
+        } catch (err: any) {
+            console.error(err);
+            alert("เกิดข้อผิดพลาดในการอัปเดตโลโก้: " + err.message);
+        }
     };
 
     const renderPage = () => {
@@ -113,6 +141,8 @@ const App: React.FC = () => {
                 return <CarUsageView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
             case 'dashboard':
                 return <DashboardView bookings={bookings} />;
+            case 'sql-editor':
+                return <SqlEditorView authToken={authToken!} />;
             default:
                 return null;
         }
@@ -147,7 +177,7 @@ const App: React.FC = () => {
             {/* Desktop top nav */}
             <header style={{ backgroundColor: '#98B6D7' }} className="hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-md z-20">
                 <div className="flex items-center gap-4">
-                    <Logo className="h-10 w-24" />
+                    <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
                      <span className="text-blue-100 text-sm font-medium">สาขา: {currentBranch}</span>
                 </div>
                 <nav className="flex items-center gap-2">
@@ -155,6 +185,7 @@ const App: React.FC = () => {
                     <DesktopNavItem page="slots" label="Slots" icon={<ListIcon />} />
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
+                    <DesktopNavItem page="sql-editor" label="SQL Editor" icon={<DatabaseIcon />} />
                 </nav>
                  <button onClick={handleLogout} className="text-blue-200 hover:text-white text-sm font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md">
                     ออกจากระบบ
@@ -165,7 +196,7 @@ const App: React.FC = () => {
             <div className="md:pt-16">
                 <header style={{ backgroundColor: '#98B6D7' }} className="text-white p-4 shadow-md sticky top-0 z-10 md:hidden">
                     <div className="flex justify-between items-center w-full">
-                        <Logo className="h-10 w-24" />
+                        <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
                         <div className="text-right">
                            <p className="text-sm font-semibold text-white">สาขา: {currentBranch}</p>
                            <button onClick={handleLogout} className="text-white bg-white/20 px-2 py-0.5 rounded text-xs mt-1">
@@ -185,6 +216,7 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
+                <MobileNavItem page="sql-editor" label="SQL" icon={<DatabaseIcon className="w-6 h-6" />} />
             </nav>
             
             <BookingModal 

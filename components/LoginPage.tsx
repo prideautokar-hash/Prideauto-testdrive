@@ -50,7 +50,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
-          <Logo className="w-40 h-16 mx-auto mb-4" />
+          <Logo className="w-48 h-16 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gray-800">Test Drive Booker</h1>
           <p className="mt-2 text-gray-600">ระบบจองคิวทดลองขับ</p>
         </div>

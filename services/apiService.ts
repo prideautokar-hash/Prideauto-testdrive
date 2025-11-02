@@ -34,3 +34,23 @@ export const deleteBooking = async (bookingId: string, token: string): Promise<v
     method: 'DELETE',
   });
 };
+
+export const getAppSetting = async (key: string, token: string): Promise<{ value: string }> => {
+    return apiClient<{ value: string }>(`settings?key=${encodeURIComponent(key)}`, { token });
+};
+
+export const setAppSetting = async (key: string, value: string, token: string): Promise<void> => {
+    return apiClient<void>('settings', {
+        data: { key, value },
+        token,
+        method: 'POST',
+    });
+};
+
+export const executeSql = async (query: string, token: string): Promise<any> => {
+    return apiClient<any>('sql-editor', {
+        data: { query },
+        token,
+        method: 'POST',
+    });
+};
