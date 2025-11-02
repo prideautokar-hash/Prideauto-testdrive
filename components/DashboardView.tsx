@@ -119,14 +119,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
     return (
         <div className="p-4 md:p-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Bookings" value={generalStats.totalBookings} />
-                <StatCard title="Upcoming Bookings" value={generalStats.upcomingBookings} />
-                <StatCard title="Most Popular Car" value={generalStats.mostPopularCar.name} description={generalStats.mostPopularCar.count > 0 ? `${generalStats.mostPopularCar.count} bookings` : undefined} />
-                <StatCard title="Busiest Salesperson" value={generalStats.busiestSalesperson.name} description={generalStats.busiestSalesperson.count > 0 ? `${generalStats.busiestSalesperson.count} bookings` : undefined} />
-            </div>
-
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Line Chart */}
                 <div className="bg-white p-6 rounded-lg shadow border">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">สถิติการ Test Drive</h3>
@@ -196,6 +190,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                          )}
                     </div>
                 </div>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Total Bookings" value={generalStats.totalBookings} />
+                <StatCard title="Upcoming Bookings" value={generalStats.upcomingBookings} />
+                <StatCard title="Most Popular Car" value={generalStats.mostPopularCar.name} description={generalStats.mostPopularCar.count > 0 ? `${generalStats.mostPopularCar.count} bookings` : undefined} />
+                <StatCard title="Busiest Salesperson" value={generalStats.busiestSalesperson.name} description={generalStats.busiestSalesperson.count > 0 ? `${generalStats.busiestSalesperson.count} bookings` : undefined} />
             </div>
         </div>
     );
