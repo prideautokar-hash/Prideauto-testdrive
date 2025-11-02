@@ -251,30 +251,37 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 client.release();
             }
         }
-        // --- SQL EDITOR ENDPOINT ---
-        else if (url.pathname.endsWith('/sql-editor')) {
+        // FIX: Add /sql endpoint for the SQL Editor view.
+        else if (url.pathname.endsWith('/sql')) {
             const userData = verifyToken(req);
             if (!userData) {
                 return sendResponse(res, 401, { message: 'Authentication required' });
             }
-            const client = await pool.connect();
-            try {
-                if (req.method === 'POST') {
-                    const { query } = await parseJSONBody(req);
-                    if (!query) return sendResponse(res, 400, { message: 'SQL query is required' });
 
+            if (req.method === 'POST') {
+                const { query } = await parseJSONBody(req);
+                if (!query || typeof query !== 'string') {
+                    return sendResponse(res, 400, { message: 'A "query" string is required in the request body.' });
+                }
+
+                const client = await pool.connect();
+                try {
                     const result = await client.query(query);
-                    sendResponse(res, 200, { 
+                    // Return the result in a format expected by the frontend
+                    sendResponse(res, 200, {
                         command: result.command,
                         rowCount: result.rowCount,
-                        rows: result.rows 
+                        rows: result.rows,
                     });
+                } catch (err: any) {
+                    // Forward database errors to the client for display in the UI
+                    console.error('SQL Execution Error:', err);
+                    sendResponse(res, 400, { message: err.message });
+                } finally {
+                    client.release();
                 }
-            } catch (err: any) {
-                console.error('SQL Editor Error:', err);
-                sendResponse(res, 400, { message: err.message });
-            } finally {
-                client.release();
+            } else {
+                sendResponse(res, 405, { message: 'Method Not Allowed' });
             }
         }
         else {

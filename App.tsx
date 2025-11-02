@@ -5,13 +5,12 @@ import SlotView from './components/SlotView';
 import CarUsageView from './components/CarUsageView';
 import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
-import { CalendarIcon, ListIcon, GridIcon, ChartIcon, DatabaseIcon } from './components/icons';
+import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
 import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting } from './services/apiService';
 import { Logo } from './components/Logo';
-import SqlEditorView from './components/SqlEditorView';
 
-type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'sql-editor';
+type Page = 'calendar' | 'slots' | 'usage' | 'dashboard';
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
@@ -141,8 +140,6 @@ const App: React.FC = () => {
                 return <CarUsageView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
             case 'dashboard':
                 return <DashboardView bookings={bookings} />;
-            case 'sql-editor':
-                return <SqlEditorView authToken={authToken!} />;
             default:
                 return null;
         }
@@ -185,7 +182,6 @@ const App: React.FC = () => {
                     <DesktopNavItem page="slots" label="Slots" icon={<ListIcon />} />
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
-                    <DesktopNavItem page="sql-editor" label="SQL Editor" icon={<DatabaseIcon />} />
                 </nav>
                  <button onClick={handleLogout} className="text-blue-200 hover:text-white text-sm font-medium bg-white/10 hover:bg-white/20 px-4 py-2 rounded-md">
                     ออกจากระบบ
@@ -216,7 +212,6 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
-                <MobileNavItem page="sql-editor" label="SQL" icon={<DatabaseIcon className="w-6 h-6" />} />
             </nav>
             
             <BookingModal 

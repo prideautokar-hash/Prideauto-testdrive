@@ -47,8 +47,9 @@ export const setAppSetting = async (key: string, value: string, token: string): 
     });
 };
 
+// FIX: Add executeSql function to be used by the SQL Editor view.
 export const executeSql = async (query: string, token: string): Promise<any> => {
-    return apiClient<any>('sql-editor', {
+    return apiClient<any>('sql', {
         data: { query },
         token,
         method: 'POST',
