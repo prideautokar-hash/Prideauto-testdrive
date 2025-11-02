@@ -292,6 +292,8 @@ const App: React.FC = () => {
                 onClose={() => setIsModalOpen(false)} 
                 onSave={handleSaveBooking}
                 initialData={modalInitialData}
+                bookings={bookings}
+                unavailability={unavailability}
             />
         </div>
     );

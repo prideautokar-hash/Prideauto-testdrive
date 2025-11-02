@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Booking, Unavailability } from '../types';
-import { TIME_SLOTS } from '../constants';
+import { TIME_SLOTS, CAR_MODELS } from '../constants';
 import { TrashIcon } from './icons';
 
 interface SlotViewProps {
@@ -105,16 +105,20 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
             const slotBookings = bookingsByTimeSlot.get(slot) || [];
             const slotUnavailability = unavailabilityByTimeSlot.get(slot) || [];
             
-            const isAvailable = slotBookings.length === 0;
+            const bookedCarModels = new Set(slotBookings.map(b => b.carModel));
+            const unavailableCarModels = new Set(slotUnavailability.map(u => u.carModel));
+            const availableCarModels = CAR_MODELS.filter(m => !bookedCarModels.has(m) && !unavailableCarModels.has(m));
+            
+            const hasBookings = slotBookings.length > 0;
 
             return (
                 <div 
                     key={slot} 
-                    className={`p-4 rounded-lg shadow-sm border transition-all duration-200 flex flex-col ${isAvailable ? 'bg-white' : 'bg-red-50'}`}
+                    className={`p-4 rounded-lg shadow-sm border transition-all duration-200 flex flex-col ${hasBookings ? 'bg-red-50' : 'bg-white'}`}
                 >
-                    <h3 className={`font-bold text-xl mb-3 ${isAvailable ? 'text-gray-700' : 'text-red-800'}`}>{slot}</h3>
+                    <h3 className={`font-bold text-xl mb-3 ${hasBookings ? 'text-red-800' : 'text-gray-700'}`}>{slot}</h3>
                     <div className="flex-grow space-y-3">
-                        {slotBookings.length > 0 ? (
+                        {hasBookings ? (
                             <ul className="space-y-3">
                                {slotBookings.map(booking => (
                                    <li key={booking.id} className="text-sm group relative bg-red-100 p-2 rounded">
@@ -135,16 +139,22 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                                ))}
                             </ul>
                         ) : (
-                             <button
-                                className="w-full text-center py-4 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
-                                onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
-                                aria-label={`จองเวลา ${slot}`}
-                             >
-                                ว่าง
-                            </button>
+                             availableCarModels.length > 0 ? (
+                                <button
+                                    className="w-full text-center py-4 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
+                                    onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
+                                    aria-label={`จองเวลา ${slot}`}
+                                >
+                                    ว่าง
+                                </button>
+                             ) : (
+                                <div className="w-full text-center py-4 rounded-md bg-gray-100 text-gray-500">
+                                    เต็ม
+                                </div>
+                             )
                         )}
                         {slotUnavailability.length > 0 && (
-                             <div className="mt-3">
+                             <div className="mt-3 pt-3 border-t border-gray-200">
                                 <p className="text-xs font-semibold text-gray-500 mb-1">รถไม่พร้อมใช้:</p>
                                 <ul className="space-y-1">
                                     {slotUnavailability.map(u => (
