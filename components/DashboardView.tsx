@@ -20,6 +20,30 @@ const StatCard: React.FC<{ title: string; value: string | number; description?: 
 
 const COLORS = ['#98B6D7', '#7D9AB9', '#627E9B', '#4C637A', '#3A4C5E', '#2B3A47', '#1E2B33', '#131D21'];
 
+const RADIAN = Math.PI / 180;
+// Custom label renderer to position labels closer to the pie chart
+const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, name }: any) => {
+  // Position the label slightly outside the pie slice, but closer than the default.
+  const radius = outerRadius + 10; // Use a smaller offset for closer labels
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  
+  const text = `${name.replace('BYD ', '')} ${(percent * 100).toFixed(0)}%`;
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#374151"
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+    >
+      {text}
+    </text>
+  );
+};
+
+
 const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
     const [lineChartPeriod, setLineChartPeriod] = useState<'day' | 'month' | 'year'>('month');
     const [lineChartCarModel, setLineChartCarModel] = useState<string>('all');
@@ -174,7 +198,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                                         fill="#8884d8"
                                         dataKey="value"
                                         nameKey="name"
-                                        label={({ name, percent }) => `${name.replace('BYD ', '')} ${(percent * 100).toFixed(0)}%`}
+                                        label={renderCustomizedLabel}
                                     >
                                         {pieChartData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
