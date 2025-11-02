@@ -1,11 +1,11 @@
-import { Booking, Branch } from '../types';
+import { Booking, Branch, CarModel } from '../types';
 import apiClient from './apiClient';
 
 export const login = async (username: string, password: string): Promise<{ token: string }> => {
   if (!username || !password) {
       throw new Error('Username and password are required');
   }
-  return apiClient<{ token: string }>('login', {
+  return apiClient<{ token:string }>('login', {
     data: { username, password },
     method: 'POST'
   });
@@ -53,5 +53,31 @@ export const executeSql = async (query: string, token: string): Promise<any> => 
         data: { query },
         token,
         method: 'POST',
+    });
+};
+
+// --- Unavailability API services ---
+
+export const getUnavailability = async (branch: Branch, token: string): Promise<any[]> => {
+    return apiClient<any[]>(`unavailability?branch=${encodeURIComponent(branch)}`, { token });
+};
+
+export const addUnavailability = async (
+    data: { carModel: CarModel; date: string; blockType: 'morning' | 'afternoon' | 'all_day'; reason: string },
+    branch: Branch,
+    token: string
+): Promise<any> => {
+    return apiClient<any>('unavailability', {
+        data: { ...data, branch },
+        token,
+        method: 'POST',
+    });
+};
+
+export const deleteUnavailability = async (unavailabilityId: string, token: string): Promise<void> => {
+    return apiClient<void>('unavailability', {
+        data: { id: unavailabilityId },
+        token,
+        method: 'DELETE',
     });
 };

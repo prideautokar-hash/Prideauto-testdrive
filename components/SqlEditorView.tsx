@@ -5,12 +5,22 @@ interface SqlEditorViewProps {
     authToken: string;
 }
 
-const DEFAULT_QUERY = `-- This query creates the table needed to store app settings like the logo.
--- Press 'Execute' to run it.
-CREATE TABLE app_settings (
-  key VARCHAR(255) PRIMARY KEY,
-  value TEXT
+const DEFAULT_QUERY = `-- This query creates the table needed for the "Unavailable Cars" feature.
+-- Press 'Execute' to run it. Make sure you have already created the 'app_settings' table.
+CREATE TABLE car_unavailability (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    car_id UUID NOT NULL REFERENCES cars(id),
+    branch_id UUID NOT NULL REFERENCES branches(id),
+    unavailability_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by_user_id UUID REFERENCES users(id)
 );
+
+-- Optional: Add an index for faster lookups
+CREATE INDEX idx_car_unavailability_date ON car_unavailability(car_id, unavailability_date);
 `;
 
 const SqlEditorView: React.FC<SqlEditorViewProps> = ({ authToken }) => {
@@ -97,7 +107,7 @@ const SqlEditorView: React.FC<SqlEditorViewProps> = ({ authToken }) => {
                             id="sql-query"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            rows={8}
+                            rows={12}
                             className="w-full border border-gray-300 rounded-md shadow-sm p-2 font-mono text-sm focus:ring-blue-500 focus:border-blue-500"
                             placeholder="Enter your SQL query here..."
                         />

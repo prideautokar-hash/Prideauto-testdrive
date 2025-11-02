@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Booking } from '../types';
+import { Booking, Unavailability } from '../types';
 import { TIME_SLOTS } from '../constants';
 import { TrashIcon } from './icons';
 
 interface SlotViewProps {
   bookings: Booking[];
+  unavailabilityRecords: Unavailability[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   openBookingModal: (data?: Partial<Booking>) => void;
@@ -21,7 +22,7 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 
-const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
+const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailabilityRecords, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
 
@@ -31,6 +32,10 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
       .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
   }, [bookings, selectedDateStringForInput]);
   
+  const unavailabilityForSelectedDate = useMemo(() => {
+    return unavailabilityRecords.filter(u => u.date === selectedDateStringForInput);
+  }, [unavailabilityRecords, selectedDateStringForInput]);
+
   const bookingsByTimeSlot = useMemo(() => {
     const map = new Map<string, Booking[]>();
     bookingsForSelectedDate.forEach(booking => {
@@ -41,6 +46,22 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
     });
     return map;
   }, [bookingsForSelectedDate]);
+  
+  const unavailableSlotsByCar = useMemo(() => {
+      const map = new Map<string, { carModel: string; reason?: string }[]>();
+      for (const slot of TIME_SLOTS) {
+          const unavailableCarsForSlot: { carModel: string; reason?: string }[] = [];
+          for (const record of unavailabilityForSelectedDate) {
+              if (slot >= record.startTime && slot < record.endTime) {
+                  unavailableCarsForSlot.push({ carModel: record.carModel, reason: record.reason });
+              }
+          }
+          if (unavailableCarsForSlot.length > 0) {
+              map.set(slot, unavailableCarsForSlot);
+          }
+      }
+      return map;
+  }, [unavailabilityForSelectedDate]);
 
   const thaiDateFormat = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',
@@ -82,19 +103,21 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {TIME_SLOTS.map(slot => {
             const slotBookings = bookingsByTimeSlot.get(slot) || [];
+            const unavailableCars = unavailableSlotsByCar.get(slot) || [];
             
             let cardClasses = 'border-green-300 bg-green-100 hover:bg-green-200 text-green-800';
-            if (slotBookings.length === 1) {
+            if (slotBookings.length > 0) {
               cardClasses = 'border-red-300 bg-red-100 hover:bg-red-200 text-red-800';
-            } else if (slotBookings.length > 1) {
-              cardClasses = 'border-red-400 bg-red-200 hover:bg-red-300 text-red-900';
+            }
+            if (unavailableCars.length > 0) {
+              cardClasses = 'border-gray-300 bg-gray-200 text-gray-500 cursor-not-allowed';
             }
 
             return (
                 <div 
                     key={slot} 
-                    className={`p-4 rounded-lg shadow-sm border cursor-pointer transition-all duration-200 flex flex-col ${cardClasses}`}
-                    onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
+                    className={`p-4 rounded-lg shadow-sm border transition-all duration-200 flex flex-col ${cardClasses} ${unavailableCars.length === 0 ? 'cursor-pointer' : ''}`}
+                    onClick={() => unavailableCars.length === 0 && openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
                     role="button"
                     tabIndex={0}
                     aria-label={`จองเวลา ${slot}`}
@@ -120,6 +143,15 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
                                        </button>
                                    </li>
                                ))}
+                            </ul>
+                        ) : unavailableCars.length > 0 ? (
+                            <ul className="space-y-2">
+                              {unavailableCars.map((car, index) => (
+                                <li key={index} className="text-sm bg-gray-300/60 p-2 rounded">
+                                  <p className="font-semibold">{car.carModel}</p>
+                                  <p className="text-xs text-gray-600">{car.reason || 'ไม่พร้อมใช้งาน'}</p>
+                                </li>
+                              ))}
                             </ul>
                         ) : (
                             <div className="flex items-center justify-center h-full min-h-[60px]">
