@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
-import { Booking, CarModel, Unavailability } from '../types';
+import { Booking, CarModel } from '../types';
 import { TIME_SLOTS, CAR_MODELS } from '../constants';
 import { CheckIcon, XIcon } from './icons';
 
 interface CarUsageViewProps {
   bookings: Booking[];
-  unavailabilityRecords: Unavailability[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 }
@@ -31,39 +30,32 @@ const SHORT_CAR_MODEL_NAMES: Record<CarModel, string> = {
 };
 
 
-const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailabilityRecords, selectedDate, setSelectedDate }) => {
+const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, selectedDate, setSelectedDate }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
   
   const bookingsForSelectedDate = useMemo(() => {
     return bookings.filter(b => b.date === selectedDateStringForInput);
   }, [bookings, selectedDateStringForInput]);
-
-  const unavailabilityForSelectedDate = useMemo(() => {
-    return unavailabilityRecords.filter(u => u.date === selectedDateStringForInput);
-  }, [unavailabilityRecords, selectedDateStringForInput]);
   
   const usageGrid = useMemo(() => {
-    const grid = new Map<string, Map<CarModel, { booking: Booking | null; unavailability: Unavailability | null }>>();
-    
+    const grid = new Map<string, Map<CarModel, Booking | null>>();
     TIME_SLOTS.forEach(slot => {
-        const slotMap = new Map<CarModel, { booking: Booking | null; unavailability: Unavailability | null }>();
-        CAR_MODELS.forEach(model => {
-            const unavailabilityRecord = unavailabilityForSelectedDate.find(u => 
-                u.carModel === model && slot >= u.startTime && slot < u.endTime
-            ) || null;
-            
-            const bookingRecord = bookingsForSelectedDate.find(b => 
-                b.carModel === model && b.timeSlot === slot
-            ) || null;
+      const slotMap = new Map<CarModel, Booking | null>();
+      CAR_MODELS.forEach(model => {
+        slotMap.set(model, null);
+      });
+      grid.set(slot, slotMap);
+    });
 
-            slotMap.set(model, { booking: bookingRecord, unavailability: unavailabilityRecord });
-        });
-        grid.set(slot, slotMap);
+    bookingsForSelectedDate.forEach(booking => {
+      if (grid.has(booking.timeSlot)) {
+        grid.get(booking.timeSlot)?.set(booking.carModel, booking);
+      }
     });
     
     return grid;
-  }, [bookingsForSelectedDate, unavailabilityForSelectedDate]);
+  }, [bookingsForSelectedDate]);
   
   const carUsageStatus = useMemo(() => {
     const statusMap = new Map<CarModel, boolean>();
@@ -71,11 +63,8 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailabilityRec
     bookingsForSelectedDate.forEach(booking => {
         statusMap.set(booking.carModel, true);
     });
-    unavailabilityForSelectedDate.forEach(record => {
-        statusMap.set(record.carModel, true);
-    });
     return statusMap;
-  }, [bookingsForSelectedDate, unavailabilityForSelectedDate]);
+  }, [bookingsForSelectedDate]);
 
   const thaiDateFormat = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',
@@ -127,26 +116,18 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailabilityRec
                   {Array.from(usageGrid.entries()).map(([slot, carMap]) => (
                       <tr key={slot}>
                           <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white">{slot}</td>
-                          {Array.from(carMap.entries()).map(([model, data]) => (
-                              <td key={`${slot}-${model}`} className={`px-2 py-2 whitespace-nowrap text-center ${data.unavailability ? 'bg-gray-100' : ''}`}>
-                                  {data.booking ? (
+                          {Array.from(carMap.entries()).map(([model, booking]) => (
+                              <td key={`${slot}-${model}`} className="px-2 py-2 whitespace-nowrap text-center">
+                                  {booking ? (
                                       <div className="flex flex-col items-center justify-center text-xs text-center group relative">
                                           <CheckIcon className="w-5 h-5 text-green-500" />
                                           <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
-                                              <p className="font-bold">ลูกค้า: {data.booking.customerName}</p>
-                                              <p>{data.booking.phoneNumber}</p>
-                                              <p>เซลล์: {data.booking.salesperson}</p>
-                                              {data.booking.notes && <p>หมายเหตุ: {data.booking.notes}</p>}
+                                              <p className="font-bold">ลูกค้า: {booking.customerName}</p>
+                                              <p>{booking.phoneNumber}</p>
+                                              <p>เซลล์: {booking.salesperson}</p>
+                                              {booking.notes && <p>หมายเหตุ: {booking.notes}</p>}
                                           </div>
                                       </div>
-                                  ) : data.unavailability ? (
-                                    <div className="flex flex-col items-center justify-center text-xs text-center group relative">
-                                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                                        <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
-                                            <p className="font-bold">ไม่พร้อมใช้งาน</p>
-                                            {data.unavailability.reason && <p>เหตุผล: {data.unavailability.reason}</p>}
-                                        </div>
-                                    </div>
                                   ) : (
                                      <XIcon className="w-4 h-4 text-gray-300 mx-auto" />
                                   )}

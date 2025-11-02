@@ -77,11 +77,15 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                 const client = await pool.connect();
                 try {
+                    // Using public.users as confirmed table name
                     const userResult = await client.query('SELECT id, password_hash FROM public.users WHERE username = $1', [username]);
                     if (userResult.rows.length === 0) {
                         return sendResponse(res, 401, { message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
                     }
                     const user = userResult.rows[0];
+
+                    // --- PLAIN TEXT PASSWORD CHECK (as requested) ---
+                    // WARNING: In a real production environment, use bcrypt.compare()
                     if (password === user.password_hash) {
                         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '8h' });
                         sendResponse(res, 200, { token });
@@ -107,53 +111,63 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     if (!branch) {
                         return sendResponse(res, 400, { message: 'Branch is required' });
                     }
+                    // Corrected table names to plural
                     const result = await client.query(`
                         SELECT 
-                            b.id, c.name as "customerName", c.phone_number as "phoneNumber",
-                            b.booking_date as "date", to_char(b.booking_time, 'HH24:MI') as "timeSlot",
-                            cr.model_name as "carModel", b.notes, s.name as "salesperson", br.name as "branch"
+                            b.id, 
+                            c.name as "customerName", 
+                            c.phone_number as "phoneNumber",
+                            b.booking_date as "date",
+                            to_char(b.booking_time, 'HH24:MI') as "timeSlot",
+                            cr.model_name as "carModel",
+                            b.notes,
+                            s.name as "salesperson",
+                            br.name as "branch"
                         FROM public.bookings b
                         JOIN public.customers c ON b.customer_id = c.id
                         JOIN public.cars cr ON b.car_id = cr.id
                         JOIN public.salespeople s ON b.salesperson_id = s.id
                         JOIN public.branches br ON b.branch_id = br.id
-                        WHERE br.name = $1 ORDER BY b.booking_date, b.booking_time
+                        WHERE br.name = $1
+                        ORDER BY b.booking_date, b.booking_time
                     `, [branch]);
                     
+                    // Format date to YYYY-MM-DD
                     const formattedRows = result.rows.map(row => ({
-                        ...row, date: new Date(row.date).toISOString().split('T')[0]
+                        ...row,
+                        date: new Date(row.date).toISOString().split('T')[0]
                     }));
+
                     sendResponse(res, 200, formattedRows);
                 } else if (req.method === 'POST') {
                     const { customerName, phoneNumber, date, timeSlot, carModel, notes, salesperson, branch } = await parseJSONBody(req);
                     
+                    // Get IDs for foreign keys and validate inputs
                     const branchResult = await client.query('SELECT id FROM public.branches WHERE name = $1', [branch]);
-                    if (branchResult.rows.length === 0) return sendResponse(res, 400, { message: 'Invalid branch' });
+                    if (branchResult.rows.length === 0) {
+                        return sendResponse(res, 400, { message: 'Invalid branch' });
+                    }
                     const branchId = branchResult.rows[0].id;
 
                     const carResult = await client.query('SELECT id FROM public.cars WHERE model_name = $1', [carModel]);
-                    if (carResult.rows.length === 0) return sendResponse(res, 400, { message: 'Invalid car model' });
+                    if (carResult.rows.length === 0) {
+                        return sendResponse(res, 400, { message: 'Invalid car model' });
+                    }
                     const carId = carResult.rows[0].id;
                     
-                    // Check for conflicting test drive bookings
-                    const bookingConflict = await client.query(
+                    // Check for conflicting bookings
+                    const conflictCheckResult = await client.query(
                         'SELECT id FROM public.bookings WHERE car_id = $1 AND booking_date = $2 AND booking_time = $3 AND branch_id = $4',
                         [carId, date, timeSlot, branchId]
                     );
-                    if (bookingConflict.rows.length > 0) {
+                
+                    if (conflictCheckResult.rows.length > 0) {
                         return sendResponse(res, 409, { message: `รถรุ่นนี้ถูกจองในช่วงเวลา ${timeSlot} แล้ว` });
                     }
 
-                    // Check for conflicting unavailability records
-                    const unavailabilityConflict = await client.query(
-                        'SELECT id FROM public.car_unavailability WHERE car_id = $1 AND unavailability_date = $2 AND $3 >= start_time AND $3 < end_time AND branch_id = $4',
-                        [carId, date, timeSlot, branchId]
-                    );
-                    if (unavailabilityConflict.rows.length > 0) {
-                        return sendResponse(res, 409, { message: `รถรุ่นนี้ไม่พร้อมใช้งานในช่วงเวลา ${timeSlot}` });
-                    }
-
                     await client.query('BEGIN');
+
+                    // Find or create customer
                     let customerResult = await client.query('SELECT id FROM public.customers WHERE name = $1 AND phone_number = $2', [customerName, phoneNumber || null]);
                     let customerId;
                     if (customerResult.rows.length > 0) {
@@ -163,8 +177,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         customerId = customerResult.rows[0].id;
                     }
                     
+                    // Find or create salesperson
                     let salespersonResult = await client.query('SELECT id FROM public.salespeople WHERE name = $1 AND branch_id = $2', [salesperson, branchId]);
-                    let salespersonId;
+                     let salespersonId;
                     if (salespersonResult.rows.length > 0) {
                         salespersonId = salespersonResult.rows[0].id;
                     } else {
@@ -181,88 +196,19 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     sendResponse(res, 201, newBookingResult.rows[0]);
                 } else if (req.method === 'DELETE') {
                     const { id } = await parseJSONBody(req);
-                    if (!id) return sendResponse(res, 400, { message: 'Booking ID is required' });
+                    if (!id) {
+                        return sendResponse(res, 400, { message: 'Booking ID is required' });
+                    }
                     const deleteResult = await client.query('DELETE FROM public.bookings WHERE id = $1', [id]);
-                    if (deleteResult.rowCount === 0) return sendResponse(res, 404, { message: 'Booking not found' });
+                    if (deleteResult.rowCount === 0) {
+                        return sendResponse(res, 404, { message: 'Booking not found' });
+                    }
                     sendResponse(res, 200, { message: 'Booking deleted successfully' });
                 }
             } catch (err) {
                  await client.query('ROLLBACK');
                  console.error('Database Error:', err);
                  sendResponse(res, 500, { message: 'Internal Server Error' });
-            } finally {
-                client.release();
-            }
-        }
-        // --- UNAVAILABILITY ENDPOINT ---
-        else if (url.pathname.endsWith('/unavailability')) {
-            const userData = verifyToken(req);
-            if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
-
-            const client = await pool.connect();
-            try {
-                if (req.method === 'GET') {
-                    const branch = url.searchParams.get('branch') as Branch;
-                    if (!branch) return sendResponse(res, 400, { message: 'Branch is required' });
-
-                    const result = await client.query(`
-                        SELECT u.id, c.model_name as "carModel", b.name as "branch", u.unavailability_date as "date",
-                               to_char(u.start_time, 'HH24:MI') as "startTime", to_char(u.end_time, 'HH24:MI') as "endTime", u.reason
-                        FROM public.car_unavailability u
-                        JOIN public.cars c ON u.car_id = c.id
-                        JOIN public.branches b ON u.branch_id = b.id
-                        WHERE b.name = $1 ORDER BY u.unavailability_date, u.start_time
-                    `, [branch]);
-
-                    const formattedRows = result.rows.map(row => ({
-                        ...row, date: new Date(row.date).toISOString().split('T')[0]
-                    }));
-                    sendResponse(res, 200, formattedRows);
-
-                } else if (req.method === 'POST') {
-                    const { carModel, date, blockType, reason, branch } = await parseJSONBody(req);
-
-                    const branchResult = await client.query('SELECT id FROM public.branches WHERE name = $1', [branch]);
-                    if (branchResult.rows.length === 0) return sendResponse(res, 400, { message: 'Invalid branch' });
-                    const branchId = branchResult.rows[0].id;
-
-                    const carResult = await client.query('SELECT id FROM public.cars WHERE model_name = $1', [carModel]);
-                    if (carResult.rows.length === 0) return sendResponse(res, 400, { message: 'Invalid car model' });
-                    const carId = carResult.rows[0].id;
-                    
-                    const timeMap = {
-                        morning: { start: '08:00', end: '13:00' },
-                        afternoon: { start: '13:00', end: '17:00' },
-                        all_day: { start: '08:00', end: '17:00' }
-                    };
-                    const { start, end } = timeMap[blockType as keyof typeof timeMap];
-
-                    // Check for conflicting test drive bookings
-                    const bookingConflict = await client.query(
-                        'SELECT id FROM public.bookings WHERE car_id = $1 AND booking_date = $2 AND booking_time >= $3 AND booking_time < $4 AND branch_id = $5',
-                        [carId, date, start, end, branchId]
-                    );
-                    if (bookingConflict.rows.length > 0) {
-                        return sendResponse(res, 409, { message: `ไม่สามารถบล็อกได้เนื่องจากมี Test Drive จองไว้แล้วในช่วงเวลานี้` });
-                    }
-
-                    const newRecord = await client.query(
-                        `INSERT INTO public.car_unavailability (car_id, branch_id, unavailability_date, start_time, end_time, reason, created_by_user_id)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-                        [carId, branchId, date, start, end, reason || null, userData.userId]
-                    );
-                    sendResponse(res, 201, { id: newRecord.rows[0].id });
-
-                } else if (req.method === 'DELETE') {
-                    const { id } = await parseJSONBody(req);
-                    if (!id) return sendResponse(res, 400, { message: 'ID is required' });
-                    await client.query('DELETE FROM public.car_unavailability WHERE id = $1', [id]);
-                    sendResponse(res, 200, { message: 'Unavailability record deleted' });
-                }
-
-            } catch(err) {
-                console.error('Unavailability DB Error:', err);
-                sendResponse(res, 500, { message: 'Internal Server Error' });
             } finally {
                 client.release();
             }
@@ -275,9 +221,12 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     const key = url.searchParams.get('key');
                     if (!key) return sendResponse(res, 400, { message: 'Setting key is required' });
 
+                    // Allow public access for 'app_logo'
                     if (key !== 'app_logo') {
                         const userData = verifyToken(req);
-                        if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+                        if (!userData) {
+                            return sendResponse(res, 401, { message: 'Authentication required' });
+                        }
                     }
                     
                     const result = await client.query('SELECT value FROM public.app_settings WHERE key = $1', [key]);
@@ -287,11 +236,17 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         sendResponse(res, 404, { message: 'Setting not found' });
                     }
                 } else if (req.method === 'POST') {
+                    // POST requests (updating settings) must be authenticated
                     const userData = verifyToken(req);
-                    if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+                    if (!userData) {
+                        return sendResponse(res, 401, { message: 'Authentication required' });
+                    }
 
                     const { key, value } = await parseJSONBody(req);
-                    if (!key || value === undefined) return sendResponse(res, 400, { message: 'Key and value are required' });
+                    if (!key || value === undefined) {
+                        return sendResponse(res, 400, { message: 'Key and value are required' });
+                    }
+                    // UPSERT operation
                     await client.query(
                         `INSERT INTO public.app_settings (key, value) VALUES ($1, $2)
                          ON CONFLICT (key) DO UPDATE SET value = $2`,
@@ -309,7 +264,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
         // FIX: Add /sql endpoint for the SQL Editor view.
         else if (url.pathname.endsWith('/sql')) {
             const userData = verifyToken(req);
-            if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+            if (!userData) {
+                return sendResponse(res, 401, { message: 'Authentication required' });
+            }
 
             if (req.method === 'POST') {
                 const { query } = await parseJSONBody(req);
@@ -320,10 +277,14 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 const client = await pool.connect();
                 try {
                     const result = await client.query(query);
+                    // Return the result in a format expected by the frontend
                     sendResponse(res, 200, {
-                        command: result.command, rowCount: result.rowCount, rows: result.rows,
+                        command: result.command,
+                        rowCount: result.rowCount,
+                        rows: result.rows,
                     });
                 } catch (err: any) {
+                    // Forward database errors to the client for display in the UI
                     console.error('SQL Execution Error:', err);
                     sendResponse(res, 400, { message: err.message });
                 } finally {

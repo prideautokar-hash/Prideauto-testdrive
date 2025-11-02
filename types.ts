@@ -25,13 +25,3 @@ export interface Booking {
   salesperson: string;
   branch: Branch;
 }
-
-export interface Unavailability {
-  id: string;
-  carModel: CarModel;
-  branch: Branch;
-  date: string; // YYYY-MM-DD
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
-  reason?: string;
-}
