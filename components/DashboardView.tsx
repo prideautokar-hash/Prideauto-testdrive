@@ -21,24 +21,32 @@ const StatCard: React.FC<{ title: string; value: string | number; description?: 
 const COLORS = ['#98B6D7', '#7D9AB9', '#627E9B', '#4C637A', '#3A4C5E', '#2B3A47', '#1E2B33', '#131D21'];
 
 const RADIAN = Math.PI / 180;
-// Custom label renderer to position labels closer to the pie chart
+// Custom label renderer to position labels INSIDE the pie chart slices for a cleaner look.
 const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, name }: any) => {
-  // Position the label slightly outside the pie slice, but closer than the default.
-  const radius = outerRadius + 10; // Use a smaller offset for closer labels
+  // Position the label inside the pie slice for a cleaner, overlapping effect.
+  const radius = outerRadius * 0.65; // Position at 65% from the center.
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
-  
-  const text = `${name.replace('BYD ', '')} ${(percent * 100).toFixed(0)}%`;
+
+  // Avoid clutter by hiding labels for very small slices.
+  if (percent < 0.05) {
+    return null;
+  }
+
+  const modelName = name.replace('BYD ', '');
+  const percentage = `${(percent * 100).toFixed(0)}%`;
 
   return (
     <text
       x={x}
       y={y}
-      fill="#374151"
-      textAnchor={x > cx ? 'start' : 'end'}
+      fill="white"
+      textAnchor="middle"
       dominantBaseline="central"
+      style={{ fontSize: '12px', fontWeight: 'bold' }}
     >
-      {text}
+      <tspan x={x} dy="-0.6em">{modelName}</tspan>
+      <tspan x={x} dy="1.2em">{percentage}</tspan>
     </text>
   );
 };
@@ -185,7 +193,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                         <ChartButton label="เดือนนี้" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
                         <ChartButton label="ปีนี้" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
                     </div>
-                    <div style={{ width: '100%', height: 300, fontSize: '12px' }}>
+                    <div style={{ width: '100%', height: 300 }}>
                          {pieChartData.length > 0 ? (
                             <ResponsiveContainer>
                                 <PieChart>
@@ -194,7 +202,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                                         cx="50%"
                                         cy="50%"
                                         labelLine={false}
-                                        outerRadius={100}
+                                        outerRadius={110}
                                         fill="#8884d8"
                                         dataKey="value"
                                         nameKey="name"
