@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Branch } from '../types';
-import { login } from '../services/apiService';
+import { login, getAppSetting } from '../services/apiService';
 import { Logo } from './Logo';
 
 interface LoginPageProps {
@@ -13,6 +13,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [branch, setBranch] = useState<Branch>(Branch.MAHASARAKHAM);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [appLogo, setAppLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+        try {
+            // No token is passed, making it a public request for the logo
+            const { value } = await getAppSetting('app_logo');
+            setAppLogo(value);
+        } catch (err) {
+            console.log("App logo not found or couldn't be fetched for login page.");
+            setAppLogo(null);
+        }
+    };
+    fetchLogo();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +65,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-sm p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
-          <Logo className="w-48 h-16 mx-auto mb-4" />
+          <Logo className="w-48 h-16 mx-auto mb-4" logoSrc={appLogo} />
           <h1 className="text-3xl font-bold text-gray-800">Test Drive Booker</h1>
           <p className="mt-2 text-gray-600">ระบบจองคิวทดลองขับ</p>
         </div>
@@ -98,6 +113,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </button>
           </div>
         </form>
+        <p className="text-center text-xs text-gray-400 pt-4">
+          PRIDE AUTO Test Drive application Version 1.00
+        </p>
       </div>
     </div>
   );

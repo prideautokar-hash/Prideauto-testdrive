@@ -39,7 +39,7 @@ export const Logo: React.FC<LogoProps> = ({ className, logoSrc, onUpload }) => {
             title={isClickable ? "คลิกเพื่อเปลี่ยนโลโก้" : ""}
         >
             {logoSrc ? (
-                 <img src={logoSrc} alt="Company Logo" className="h-full w-full object-contain" />
+                 <img src={logoSrc} alt="Company Logo" className="h-full w-full object-contain rounded-lg" />
             ) : (
                 <div className={`w-full h-full bg-white border-2 border-blue-200 rounded-lg flex items-center justify-center p-2`} style={{ borderColor: '#98B6D7' }}>
                     <span className="font-bold text-lg whitespace-nowrap" style={{ color: '#98B6D7' }}>PRIDE AUTO</span>

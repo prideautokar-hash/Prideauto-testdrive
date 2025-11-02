@@ -215,15 +215,19 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
         }
         // --- SETTINGS ENDPOINT ---
         else if (url.pathname.endsWith('/settings')) {
-            const userData = verifyToken(req);
-            if (!userData) {
-                return sendResponse(res, 401, { message: 'Authentication required' });
-            }
             const client = await pool.connect();
             try {
                 if (req.method === 'GET') {
                     const key = url.searchParams.get('key');
                     if (!key) return sendResponse(res, 400, { message: 'Setting key is required' });
+
+                    // Allow public access for 'app_logo'
+                    if (key !== 'app_logo') {
+                        const userData = verifyToken(req);
+                        if (!userData) {
+                            return sendResponse(res, 401, { message: 'Authentication required' });
+                        }
+                    }
                     
                     const result = await client.query('SELECT value FROM public.app_settings WHERE key = $1', [key]);
                     if (result.rows.length > 0) {
@@ -232,6 +236,12 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         sendResponse(res, 404, { message: 'Setting not found' });
                     }
                 } else if (req.method === 'POST') {
+                    // POST requests (updating settings) must be authenticated
+                    const userData = verifyToken(req);
+                    if (!userData) {
+                        return sendResponse(res, 401, { message: 'Authentication required' });
+                    }
+
                     const { key, value } = await parseJSONBody(req);
                     if (!key || value === undefined) {
                         return sendResponse(res, 400, { message: 'Key and value are required' });

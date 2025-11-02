@@ -35,7 +35,7 @@ export const deleteBooking = async (bookingId: string, token: string): Promise<v
   });
 };
 
-export const getAppSetting = async (key: string, token: string): Promise<{ value: string }> => {
+export const getAppSetting = async (key: string, token?: string): Promise<{ value: string }> => {
     return apiClient<{ value: string }>(`settings?key=${encodeURIComponent(key)}`, { token });
 };
 
