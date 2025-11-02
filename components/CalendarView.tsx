@@ -42,7 +42,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
     return (
       <div className="flex justify-between items-center mb-4">
         <button onClick={() => setSelectedDate(new Date(currentYear, currentMonth - 1, 1))} className="p-2 rounded-full hover:bg-gray-100">&lt;</button>
-        <h2 className="text-xl font-bold text-gray-700">{monthNames[currentMonth]} {currentYear}</h2>
+        <h2 className="text-lg md:text-xl font-bold text-gray-700">{monthNames[currentMonth]} {currentYear}</h2>
         <button onClick={() => setSelectedDate(new Date(currentYear, currentMonth + 1, 1))} className="p-2 rounded-full hover:bg-gray-100">&gt;</button>
       </div>
     );
@@ -75,16 +75,28 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
       cells.push(
         <div 
           key={day}
-          className={`border-t border-gray-200 p-1 h-28 flex flex-col cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+          className={`border-t border-gray-200 p-1 h-24 md:h-28 flex flex-col cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
           onClick={() => setSelectedDate(date)}
         >
-          <span className={`self-end font-medium text-sm p-1 rounded-full w-7 h-7 flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'text-gray-700'}`}>{day}</span>
-          <div className="flex-grow overflow-y-auto text-xs mt-1 space-y-1">
+          <span className={`self-end font-medium text-sm p-1 rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'text-gray-700'}`}>{day}</span>
+          
+          {/* Mobile view with dots */}
+          <div className="md:hidden flex-grow mt-1 space-x-1 flex items-center justify-center flex-wrap px-1">
              {dayBookings.slice(0, 3).map(b => (
-                 <div key={b.id} className="bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 truncate" title={`${b.customerName} - ${b.carModel}`}>{b.customerName}</div>
+                 <div key={b.id} className="w-2 h-2 bg-blue-400 rounded-full"></div>
              ))}
              {dayBookings.length > 3 && (
-                 <div className="text-gray-500 text-center">+{dayBookings.length - 3} more</div>
+                 <span className="text-gray-500 text-[10px] leading-none">+{dayBookings.length - 3}</span>
+             )}
+          </div>
+          
+          {/* Desktop view with pills */}
+          <div className="hidden md:block flex-grow overflow-y-auto text-xs mt-1 space-y-1">
+             {dayBookings.slice(0, 2).map(b => (
+                 <div key={b.id} className="bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 truncate" title={`${b.customerName} - ${b.carModel}`}>{b.customerName}</div>
+             ))}
+             {dayBookings.length > 2 && (
+                 <div className="text-gray-500 text-center">+{dayBookings.length - 2} more</div>
              )}
           </div>
         </div>
@@ -97,7 +109,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
   return (
     <div className="p-4 md:p-6">
        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">ปฏิทินการจอง</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">ปฏิทินการจอง</h1>
         <button
           onClick={() => openBookingModal({ date: toYYYYMMDD(selectedDate) })}
           style={{ backgroundColor: '#98B6D7' }}
