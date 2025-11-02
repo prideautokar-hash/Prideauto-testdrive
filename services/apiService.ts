@@ -1,11 +1,11 @@
-import { Booking, Branch } from '../types';
+import { Booking, Branch, Unavailability, CarModel } from '../types';
 import apiClient from './apiClient';
 
-export const login = async (username: string, password: string): Promise<{ token: string }> => {
+export const login = async (username: string, password: string): Promise<{ token: string; isAdmin: boolean }> => {
   if (!username || !password) {
       throw new Error('Username and password are required');
   }
-  return apiClient<{ token: string }>('login', {
+  return apiClient<{ token: string; isAdmin: boolean }>('login', {
     data: { username, password },
     method: 'POST'
   });
@@ -16,7 +16,7 @@ export const getBookings = async (branch: Branch, token: string): Promise<Bookin
 };
 
 export const addBooking = async (
-  bookingData: Omit<Booking, 'id' | 'branch'>,
+  bookingData: Omit<Booking, 'id' | 'branch' | 'carId'>,
   branch: Branch,
   token: string
 ): Promise<Booking> => {
@@ -35,6 +35,34 @@ export const deleteBooking = async (bookingId: string, token: string): Promise<v
   });
 };
 
+// --- Unavailability API services ---
+
+export const getUnavailability = async (branch: Branch, token: string): Promise<Unavailability[]> => {
+    return apiClient<Unavailability[]>(`unavailability?branch=${encodeURIComponent(branch)}`, { token });
+};
+
+export const addUnavailability = async (
+    data: { carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string, branch: Branch },
+    token: string
+): Promise<Unavailability> => {
+    return apiClient<Unavailability>('unavailability', {
+        data,
+        token,
+        method: 'POST'
+    });
+};
+
+export const deleteUnavailability = async (id: number, token: string): Promise<void> => {
+    return apiClient<void>('unavailability', {
+        data: { id },
+        token,
+        method: 'DELETE'
+    });
+};
+
+
+// --- App Settings ---
+
 export const getAppSetting = async (key: string, token?: string): Promise<{ value: string }> => {
     return apiClient<{ value: string }>(`settings?key=${encodeURIComponent(key)}`, { token });
 };
@@ -47,7 +75,6 @@ export const setAppSetting = async (key: string, value: string, token: string): 
     });
 };
 
-// FIX: Add executeSql function to be used by the SQL Editor view.
 export const executeSql = async (query: string, token: string): Promise<any> => {
     return apiClient<any>('sql', {
         data: { query },

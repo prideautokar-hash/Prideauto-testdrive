@@ -4,7 +4,7 @@ import { login, getAppSetting } from '../services/apiService';
 import { Logo } from './Logo';
 
 interface LoginPageProps {
-  onLoginSuccess: (branch: Branch, token: string) => void;
+  onLoginSuccess: (branch: Branch, token: string, isAdmin: boolean) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -34,8 +34,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setError('');
     setIsLoading(true);
     try {
-      const { token } = await login(username, password);
-      onLoginSuccess(branch, token);
+      const { token, isAdmin } = await login(username, password);
+      onLoginSuccess(branch, token, isAdmin);
     } catch (err: any) {
       setError(err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     } finally {

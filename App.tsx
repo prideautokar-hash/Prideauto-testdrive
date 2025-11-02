@@ -1,21 +1,28 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Booking, Branch } from './types';
+import { Booking, Branch, Unavailability, CarModel } from './types';
+import { CAR_MODELS } from './constants';
 import CalendarView from './components/CalendarView';
 import SlotView from './components/SlotView';
 import CarUsageView from './components/CarUsageView';
 import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
-import { CalendarIcon, ListIcon, GridIcon, ChartIcon } from './components/icons';
+import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting } from './services/apiService';
+import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability } from './services/apiService';
 import { Logo } from './components/Logo';
+import UnavailableCarsView from './components/UnavailableCarsView';
+import SqlEditorView from './components/SqlEditorView';
 
-type Page = 'calendar' | 'slots' | 'usage' | 'dashboard';
+type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable' | 'sql';
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
     const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
+    const [isUserAdmin, setIsUserAdmin] = useState(false); // To show SQL editor
+    
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [unavailability, setUnavailability] = useState<Unavailability[]>([]);
+    
     const [currentPage, setCurrentPage] = useState<Page>('calendar');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,14 +31,18 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [appLogo, setAppLogo] = useState<string | null>(null);
 
-    const fetchBookings = useCallback(async (branch: Branch, token: string) => {
+    const fetchData = useCallback(async (branch: Branch, token: string) => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await getBookings(branch, token);
-            setBookings(data);
+            const [bookingsData, unavailabilityData] = await Promise.all([
+                getBookings(branch, token),
+                getUnavailability(branch, token)
+            ]);
+            setBookings(bookingsData);
+            setUnavailability(unavailabilityData);
         } catch (err) {
-            setError('ไม่สามารถดึงข้อมูลการจองได้');
+            setError('ไม่สามารถดึงข้อมูลได้');
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -43,7 +54,6 @@ const App: React.FC = () => {
             const { value } = await getAppSetting('app_logo', token);
             setAppLogo(value);
         } catch (err) {
-            // It's okay if the logo is not found, so we don't set an error state
             console.log("App logo not found or couldn't be fetched.");
             setAppLogo(null);
         }
@@ -52,25 +62,28 @@ const App: React.FC = () => {
     useEffect(() => {
         const storedToken = localStorage.getItem('authToken');
         const storedBranch = localStorage.getItem('currentBranch') as Branch;
+        const storedIsAdmin = localStorage.getItem('isUserAdmin') === 'true';
+
         if (storedToken && storedBranch) {
             setAuthToken(storedToken);
             setCurrentBranch(storedBranch);
-            fetchBookings(storedBranch, storedToken);
+            setIsUserAdmin(storedIsAdmin);
+            fetchData(storedBranch, storedToken);
             fetchAppSettings(storedToken);
         }
-    }, [fetchBookings, fetchAppSettings]);
+    }, [fetchData, fetchAppSettings]);
 
     const openBookingModal = useCallback((data?: Partial<Booking>) => {
         setModalInitialData(data);
         setIsModalOpen(true);
     }, []);
 
-    const handleSaveBooking = async (newBookingData: Omit<Booking, 'id' | 'branch'>) => {
+    const handleSaveBooking = async (newBookingData: Omit<Booking, 'id' | 'branch' | 'carId'>) => {
         if (!currentBranch || !authToken) return;
         
         try {
             await addBooking(newBookingData, currentBranch, authToken);
-            fetchBookings(currentBranch, authToken); // Refresh data after saving
+            fetchData(currentBranch, authToken);
             setIsModalOpen(false);
         } catch(err: any) {
             console.error(err);
@@ -84,7 +97,31 @@ const App: React.FC = () => {
         if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบการจองนี้?')) {
             try {
                 await deleteBooking(bookingId, authToken);
-                fetchBookings(currentBranch, authToken);
+                fetchData(currentBranch, authToken);
+            } catch (err: any) {
+                console.error(err);
+                alert(err.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
+            }
+        }
+    };
+
+    const handleAddUnavailability = async (carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string) => {
+        if (!currentBranch || !authToken) return;
+        try {
+            await addUnavailability({ carModel, date, period, reason, branch: currentBranch }, authToken);
+            fetchData(currentBranch, authToken);
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลรถไม่พร้อมใช้งาน');
+        }
+    };
+
+    const handleDeleteUnavailability = async (id: number) => {
+        if (!currentBranch || !authToken) return;
+        if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+            try {
+                await deleteUnavailability(id, authToken);
+                fetchData(currentBranch, authToken);
             } catch (err: any) {
                 console.error(err);
                 alert(err.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
@@ -93,22 +130,28 @@ const App: React.FC = () => {
     };
 
 
-    const handleLoginSuccess = (branch: Branch, token: string) => {
+    const handleLoginSuccess = (branch: Branch, token: string, isAdmin: boolean) => {
         localStorage.setItem('authToken', token);
         localStorage.setItem('currentBranch', branch);
+        localStorage.setItem('isUserAdmin', String(isAdmin));
         setAuthToken(token);
         setCurrentBranch(branch);
-        fetchBookings(branch, token);
+        setIsUserAdmin(isAdmin);
+        fetchData(branch, token);
         fetchAppSettings(token);
     };
 
     const handleLogout = () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('currentBranch');
+        localStorage.removeItem('isUserAdmin');
         setAuthToken(null);
         setCurrentBranch(null);
+        setIsUserAdmin(false);
         setBookings([]);
+        setUnavailability([]);
         setAppLogo(null);
+        setCurrentPage('calendar');
     };
     
     const handleLogoUpload = async (base64String: string) => {
@@ -135,11 +178,22 @@ const App: React.FC = () => {
             case 'calendar':
                 return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
             case 'slots':
-                return <SlotView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
+                return <SlotView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
             case 'usage':
-                return <CarUsageView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
+                return <CarUsageView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
             case 'dashboard':
                 return <DashboardView bookings={bookings} />;
+            case 'unavailable':
+                return <UnavailableCarsView 
+                            unavailability={unavailability} 
+                            selectedDate={selectedDate} 
+                            setSelectedDate={setSelectedDate} 
+                            carModels={CAR_MODELS}
+                            onAddUnavailability={handleAddUnavailability}
+                            onDeleteUnavailability={handleDeleteUnavailability}
+                        />;
+            case 'sql':
+                return isUserAdmin && authToken ? <SqlEditorView authToken={authToken} /> : <p>Access Denied</p>;
             default:
                 return null;
         }
@@ -183,6 +237,8 @@ const App: React.FC = () => {
                     <DesktopNavItem page="slots" label="Slots" icon={<ListIcon />} />
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
+                    <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />
+                    {isUserAdmin && <DesktopNavItem page="sql" label="SQL Editor" icon={<>⚙️</>} />}
                 </nav>
                  <button onClick={handleLogout} className="text-gray-600 hover:text-gray-800 text-sm font-medium bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md transition-colors">
                     ออกจากระบบ
@@ -212,6 +268,7 @@ const App: React.FC = () => {
                 <MobileNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-6 h-6" />} />
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
+                <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             

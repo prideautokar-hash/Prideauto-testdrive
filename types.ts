@@ -21,7 +21,18 @@ export interface Booking {
   date: string; // YYYY-MM-DD
   timeSlot: string; // HH:mm
   carModel: CarModel;
+  carId: number; // Added for mapping
   notes?: string;
   salesperson: string;
   branch: Branch;
+}
+
+export interface Unavailability {
+    id: number;
+    carModel: CarModel;
+    carId: number;
+    date: string; // YYYY-MM-DD
+    startTime: string; // HH:mm
+    endTime: string; // HH:mm
+    reason?: string;
 }

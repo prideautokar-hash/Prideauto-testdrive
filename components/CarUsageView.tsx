@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Booking, CarModel } from '../types';
+import { Booking, CarModel, Unavailability } from '../types';
 import { TIME_SLOTS, CAR_MODELS } from '../constants';
 import { CheckIcon, XIcon } from './icons';
 
 interface CarUsageViewProps {
   bookings: Booking[];
+  unavailability: Unavailability[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
 }
@@ -30,32 +31,47 @@ const SHORT_CAR_MODEL_NAMES: Record<CarModel, string> = {
 };
 
 
-const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, selectedDate, setSelectedDate }) => {
+const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
   
   const bookingsForSelectedDate = useMemo(() => {
     return bookings.filter(b => b.date === selectedDateStringForInput);
   }, [bookings, selectedDateStringForInput]);
+
+  const unavailabilityForSelectedDate = useMemo(() => {
+    return unavailability.filter(u => u.date === selectedDateStringForInput);
+  }, [unavailability, selectedDateStringForInput]);
   
+  type GridCell = { type: 'booking', data: Booking } | { type: 'unavailable', data: Unavailability } | null;
+
   const usageGrid = useMemo(() => {
-    const grid = new Map<string, Map<CarModel, Booking | null>>();
+    const grid = new Map<string, Map<CarModel, GridCell>>();
+    
     TIME_SLOTS.forEach(slot => {
-      const slotMap = new Map<CarModel, Booking | null>();
-      CAR_MODELS.forEach(model => {
-        slotMap.set(model, null);
-      });
+      const slotMap = new Map<CarModel, GridCell>();
+      CAR_MODELS.forEach(model => slotMap.set(model, null));
       grid.set(slot, slotMap);
     });
 
     bookingsForSelectedDate.forEach(booking => {
       if (grid.has(booking.timeSlot)) {
-        grid.get(booking.timeSlot)?.set(booking.carModel, booking);
+        grid.get(booking.timeSlot)?.set(booking.carModel, { type: 'booking', data: booking });
       }
+    });
+
+    unavailabilityForSelectedDate.forEach(u => {
+        TIME_SLOTS.forEach(slot => {
+            if (slot >= u.startTime && slot < u.endTime) {
+                if (grid.has(slot)) {
+                    grid.get(slot)?.set(u.carModel, { type: 'unavailable', data: u });
+                }
+            }
+        });
     });
     
     return grid;
-  }, [bookingsForSelectedDate]);
+  }, [bookingsForSelectedDate, unavailabilityForSelectedDate]);
   
   const carUsageStatus = useMemo(() => {
     const statusMap = new Map<CarModel, boolean>();
@@ -116,17 +132,26 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, selectedDate, set
                   {Array.from(usageGrid.entries()).map(([slot, carMap]) => (
                       <tr key={slot}>
                           <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white">{slot}</td>
-                          {Array.from(carMap.entries()).map(([model, booking]) => (
-                              <td key={`${slot}-${model}`} className="px-2 py-2 whitespace-nowrap text-center">
-                                  {booking ? (
+                          {Array.from(carMap.entries()).map(([model, cellData]) => (
+                              <td key={`${slot}-${model}`} className={`px-2 py-2 whitespace-nowrap text-center ${cellData?.type === 'unavailable' ? 'bg-gray-100' : ''}`}>
+                                  {cellData?.type === 'booking' ? (
                                       <div className="flex flex-col items-center justify-center text-xs text-center group relative">
                                           <CheckIcon className="w-5 h-5 text-green-500" />
                                           <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
-                                              <p className="font-bold">ลูกค้า: {booking.customerName}</p>
-                                              <p>{booking.phoneNumber}</p>
-                                              <p>เซลล์: {booking.salesperson}</p>
-                                              {booking.notes && <p>หมายเหตุ: {booking.notes}</p>}
+                                              <p className="font-bold">ลูกค้า: {cellData.data.customerName}</p>
+                                              <p>{cellData.data.phoneNumber}</p>
+                                              <p>เซลล์: {cellData.data.salesperson}</p>
+                                              {cellData.data.notes && <p>หมายเหตุ: {cellData.data.notes}</p>}
                                           </div>
+                                      </div>
+                                  ) : cellData?.type === 'unavailable' ? (
+                                      <div className="flex items-center justify-center text-xs text-gray-500 group relative">
+                                        ไม่ว่าง
+                                        {cellData.data.reason && (
+                                            <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
+                                                <p>เหตุผล: {cellData.data.reason}</p>
+                                            </div>
+                                        )}
                                       </div>
                                   ) : (
                                      <XIcon className="w-4 h-4 text-gray-300 mx-auto" />

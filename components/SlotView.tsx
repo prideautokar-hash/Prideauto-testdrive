@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { Booking } from '../types';
+import { Booking, Unavailability } from '../types';
 import { TIME_SLOTS } from '../constants';
 import { TrashIcon } from './icons';
 
 interface SlotViewProps {
   bookings: Booking[];
+  unavailability: Unavailability[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   openBookingModal: (data?: Partial<Booking>) => void;
@@ -21,7 +22,7 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 
-const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
+const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
 
@@ -30,6 +31,10 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
       .filter(b => b.date === selectedDateStringForInput)
       .sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
   }, [bookings, selectedDateStringForInput]);
+
+  const unavailabilityForSelectedDate = useMemo(() => {
+    return unavailability.filter(u => u.date === selectedDateStringForInput);
+  }, [unavailability, selectedDateStringForInput]);
   
   const bookingsByTimeSlot = useMemo(() => {
     const map = new Map<string, Booking[]>();
@@ -41,6 +46,22 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
     });
     return map;
   }, [bookingsForSelectedDate]);
+
+  const unavailabilityByTimeSlot = useMemo(() => {
+    const map = new Map<string, Unavailability[]>();
+    for (const u of unavailabilityForSelectedDate) {
+        for (const slot of TIME_SLOTS) {
+            if (slot >= u.startTime && slot < u.endTime) {
+                if (!map.has(slot)) {
+                    map.set(slot, []);
+                }
+                map.get(slot)!.push(u);
+            }
+        }
+    }
+    return map;
+  }, [unavailabilityForSelectedDate]);
+
 
   const thaiDateFormat = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',
@@ -82,29 +103,21 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {TIME_SLOTS.map(slot => {
             const slotBookings = bookingsByTimeSlot.get(slot) || [];
+            const slotUnavailability = unavailabilityByTimeSlot.get(slot) || [];
             
-            let cardClasses = 'border-green-300 bg-green-100 hover:bg-green-200 text-green-800';
-            if (slotBookings.length === 1) {
-              cardClasses = 'border-red-300 bg-red-100 hover:bg-red-200 text-red-800';
-            } else if (slotBookings.length > 1) {
-              cardClasses = 'border-red-400 bg-red-200 hover:bg-red-300 text-red-900';
-            }
+            const isAvailable = slotBookings.length === 0;
 
             return (
                 <div 
                     key={slot} 
-                    className={`p-4 rounded-lg shadow-sm border cursor-pointer transition-all duration-200 flex flex-col ${cardClasses}`}
-                    onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`จองเวลา ${slot}`}
+                    className={`p-4 rounded-lg shadow-sm border transition-all duration-200 flex flex-col ${isAvailable ? 'bg-white' : 'bg-red-50'}`}
                 >
-                    <h3 className="font-bold text-xl mb-3">{slot}</h3>
-                    <div className="flex-grow">
+                    <h3 className={`font-bold text-xl mb-3 ${isAvailable ? 'text-gray-700' : 'text-red-800'}`}>{slot}</h3>
+                    <div className="flex-grow space-y-3">
                         {slotBookings.length > 0 ? (
                             <ul className="space-y-3">
                                {slotBookings.map(booking => (
-                                   <li key={booking.id} className="text-sm group relative bg-white/40 p-2 rounded">
+                                   <li key={booking.id} className="text-sm group relative bg-red-100 p-2 rounded">
                                        <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
                                        <p className="text-gray-700">{booking.carModel}</p>
                                        <p className="text-xs text-gray-500 mt-1">เซลล์: {booking.salesperson}</p>
@@ -122,8 +135,24 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, selectedDate, setSelected
                                ))}
                             </ul>
                         ) : (
-                            <div className="flex items-center justify-center h-full min-h-[60px]">
-                              <p className="text-lg font-medium text-green-700">ว่าง</p>
+                             <button
+                                className="w-full text-center py-4 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
+                                onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
+                                aria-label={`จองเวลา ${slot}`}
+                             >
+                                ว่าง
+                            </button>
+                        )}
+                        {slotUnavailability.length > 0 && (
+                             <div className="mt-3">
+                                <p className="text-xs font-semibold text-gray-500 mb-1">รถไม่พร้อมใช้:</p>
+                                <ul className="space-y-1">
+                                    {slotUnavailability.map(u => (
+                                        <li key={`unavail-${u.id}-${slot}`} className="text-xs bg-gray-100 text-gray-600 p-1.5 rounded">
+                                            {u.carModel} {u.reason ? `(${u.reason})` : ''}
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
                     </div>
