@@ -122,13 +122,14 @@ const App: React.FC = () => {
     };
 
     const handleAddUnavailability = async (carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string) => {
-        if (!currentBranch || !authToken) return;
+        if (!currentBranch || !authToken) {
+            throw new Error("Authentication error. Please log in again.");
+        }
         try {
             await addUnavailability({ carModel, date, period, reason, branch: currentBranch }, authToken);
             fetchData(currentBranch, authToken);
         } catch (err: any) {
-            console.error(err);
-            alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลรถไม่พร้อมใช้งาน');
+            throw err;
         }
     };
 
@@ -215,13 +216,15 @@ const App: React.FC = () => {
         }
     };
 
-    const DesktopNavItem = ({ page, label, icon }: { page: Page, label: string, icon: React.ReactNode }) => (
+    // FIX: Changed icon prop type from React.ReactNode to React.ReactElement for type safety with React.cloneElement.
+    // FIX: The type for icon prop is made more specific to ensure it accepts a className, which resolves the TypeScript error with cloneElement.
+    const DesktopNavItem = ({ page, label, icon }: { page: Page, label: string, icon: React.ReactElement<{ className?: string }> }) => (
         <button
             onClick={() => setCurrentPage(page)}
             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors duration-200 ${currentPage === page ? 'font-semibold bg-blue-50' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
             style={{ color: currentPage === page ? '#7D9AB9' : undefined }}
         >
-            {React.cloneElement(icon as React.ReactElement, { className: "w-5 h-5" })}
+            {React.cloneElement(icon, { className: "w-5 h-5" })}
             <span className="text-sm font-medium">{label}</span>
         </button>
     );
@@ -254,9 +257,10 @@ const App: React.FC = () => {
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />
-                    {isUserAdmin && <DesktopNavItem page="sql" label="SQL Editor" icon={<>⚙️</>} />}
+                    {/* The icon for the SQL Editor was a React Fragment which cannot accept a className. It has been wrapped in a span to resolve the error. */}
+                    {isUserAdmin && <DesktopNavItem page="sql" label="SQL Editor" icon={<span>⚙️</span>} />}
                 </nav>
-                 <button onClick={handleLogout} className="text-gray-600 hover:text-gray-800 text-sm font-medium bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md transition-colors">
+                 <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
                     ออกจากระบบ
                 </button>
             </header>
@@ -268,7 +272,7 @@ const App: React.FC = () => {
                         <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
                         <div className="text-right">
                            <p className="text-sm font-semibold text-gray-600">สาขา: {currentBranch}</p>
-                           <button onClick={handleLogout} className="text-gray-500 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded text-xs mt-1 transition-colors">
+                           <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white px-2 py-0.5 rounded text-xs mt-1 hover:opacity-90 transition-colors">
                                ออกจากระบบ
                            </button>
                         </div>

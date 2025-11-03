@@ -8,7 +8,7 @@ interface UnavailableCarsViewProps {
     selectedDate: Date;
     setSelectedDate: (date: Date) => void;
     carModels: CarModel[];
-    onAddUnavailability: (carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string) => void;
+    onAddUnavailability: (carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string) => Promise<void>;
     onDeleteUnavailability: (id: number) => void;
 }
 
@@ -19,6 +19,17 @@ const toYYYYMMDD = (date: Date) => {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+};
+
+const formatThaiDate = (dateStr: string) => {
+    const parts = dateStr.split('-').map(Number);
+    // Use UTC to prevent timezone shift issues when creating the date object
+    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    return date.toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
 };
 
 const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
@@ -34,18 +45,25 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     const [period, setPeriod] = useState<'morning' | 'afternoon' | 'all-day'>('morning');
     const [reason, setReason] = useState('');
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const selectedDateString = toYYYYMMDD(selectedDate);
+    const todayString = toYYYYMMDD(new Date());
 
-    const unavailabilityForSelectedDate = useMemo(() => {
+    const upcomingUnavailability = useMemo(() => {
         return unavailability
-            .filter(u => u.date === selectedDateString)
-            .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.carModel.localeCompare(b.carModel));
-    }, [unavailability, selectedDateString]);
+            .filter(u => u.date >= todayString)
+            .sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                if (a.startTime !== b.startTime) return a.startTime.localeCompare(b.startTime);
+                return a.carModel.localeCompare(b.carModel);
+            });
+    }, [unavailability, todayString]);
     
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccessMessage('');
         if (!selectedCarModel || !selectedDateString || !period) {
             setError('กรุณาเลือกข้อมูลให้ครบถ้วน');
             return;
@@ -74,9 +92,14 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
         }
         // --- End of Conflict Check ---
 
-        onAddUnavailability(selectedCarModel, selectedDateString, period, reason);
-        // Reset form
-        setReason('');
+        try {
+            await onAddUnavailability(selectedCarModel, selectedDateString, period, reason);
+            setSuccessMessage('การบันทึกสำเร็จแล้ว');
+            setReason(''); // Reset form on success
+            setTimeout(() => setSuccessMessage(''), 3000); // Clear message after 3 seconds
+        } catch (err: any) {
+            setError(err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+        }
     };
 
     return (
@@ -90,6 +113,7 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                 <div className="lg:col-span-1">
                     <div className="bg-white p-6 rounded-lg shadow border">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">แจ้งรถไม่พร้อมใช้งาน</h2>
+                        {successMessage && <p className="bg-green-100 text-green-700 p-2 rounded mb-4 text-sm">{successMessage}</p>}
                         {error && <p className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">{error}</p>}
                         <form onSubmit={handleSubmit} className="space-y-4">
                              <div>
@@ -137,15 +161,18 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                 <div className="lg:col-span-2">
                     <div className="bg-white p-6 rounded-lg shadow border">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">
-                            รายการสำหรับวันที่ {selectedDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            รายการทั้งหมดที่ยังมาไม่ถึง
                         </h2>
-                        {unavailabilityForSelectedDate.length > 0 ? (
+                        {upcomingUnavailability.length > 0 ? (
                             <ul className="divide-y divide-gray-200">
-                                {unavailabilityForSelectedDate.map(item => (
+                                {upcomingUnavailability.map(item => (
                                     <li key={item.id} className="py-3 group">
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <p className="font-semibold text-gray-800">{item.carModel}</p>
+                                                <p className="text-sm text-gray-600">
+                                                   วันที่: {formatThaiDate(item.date)}
+                                                </p>
                                                 <p className="text-sm text-gray-600">
                                                     เวลา: {item.startTime} - {item.endTime}
                                                 </p>
@@ -163,7 +190,7 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-gray-500 text-center py-8">ไม่มีรายการรถไม่พร้อมใช้งานสำหรับวันที่เลือก</p>
+                            <p className="text-gray-500 text-center py-8">ไม่มีรายการรถไม่พร้อมใช้งานที่กำลังจะมาถึง</p>
                         )}
                     </div>
                 </div>
