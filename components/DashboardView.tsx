@@ -58,7 +58,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
     const [pieChartPeriod, setPieChartPeriod] = useState<'day' | 'month' | 'year'>('month');
     
     const generalStats = useMemo(() => {
-         if (bookings.length === 0) {
+        if (bookings.length === 0) {
             return {
                 totalBookings: 0,
                 upcomingBookings: 0,
@@ -68,17 +68,26 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
         }
 
         const carCounts = new Map<CarModel, number>();
-        const salespersonCounts = new Map<string, number>();
+        
+        // For Busiest Salesperson of the month
+        const today = new Date();
+        const thisMonthStr = today.toLocaleDateString('en-CA').substring(0, 7); // YYYY-MM
+        const salespersonCountsThisMonth = new Map<string, number>();
         
         bookings.forEach(booking => {
+            // All-time car popularity
             carCounts.set(booking.carModel, (carCounts.get(booking.carModel) || 0) + 1);
-            salespersonCounts.set(booking.salesperson, (salespersonCounts.get(booking.salesperson) || 0) + 1);
+            
+            // This month's salesperson stats
+            if (booking.date.startsWith(thisMonthStr)) {
+                salespersonCountsThisMonth.set(booking.salesperson, (salespersonCountsThisMonth.get(booking.salesperson) || 0) + 1);
+            }
         });
 
         const mostPopularCarEntry = [...carCounts.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
-        const busiestSalespersonEntry = [...salespersonCounts.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
+        const busiestSalespersonEntry = [...salespersonCountsThisMonth.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
         
-        const todayString = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD format
+        const todayString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
         const upcomingBookings = bookings.filter(b => b.date >= todayString).length;
 
         return {
@@ -228,7 +237,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                 <StatCard title="Total Bookings" value={generalStats.totalBookings} />
                 <StatCard title="Upcoming Bookings" value={generalStats.upcomingBookings} />
                 <StatCard title="Most Popular Car" value={generalStats.mostPopularCar.name} description={generalStats.mostPopularCar.count > 0 ? `${generalStats.mostPopularCar.count} bookings` : undefined} />
-                <StatCard title="Busiest Salesperson" value={generalStats.busiestSalesperson.name} description={generalStats.busiestSalesperson.count > 0 ? `${generalStats.busiestSalesperson.count} bookings` : undefined} />
+                <StatCard title="Busiest Salesperson of the Month" value={generalStats.busiestSalesperson.name} description={generalStats.busiestSalesperson.count > 0 ? `${generalStats.busiestSalesperson.count} bookings` : undefined} />
             </div>
         </div>
     );
