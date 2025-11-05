@@ -267,7 +267,7 @@ const App: React.FC = () => {
 
             {/* Content area */}
             <div className="md:pt-16">
-                <header className="bg-white p-4 shadow-sm sticky top-0 z-10 md:hidden border-b">
+                <header className="bg-white p-4 shadow-sm sticky top-0 z-30 md:hidden border-b">
                     <div className="flex justify-between items-center w-full">
                         <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
                         <div className="text-right">

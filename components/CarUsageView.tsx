@@ -139,7 +139,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
                   </tr>
                   {Array.from(usageGrid.entries()).map(([slot, carMap]) => (
                       <tr key={slot}>
-                          <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white">{slot}</td>
+                          <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white z-10">{slot}</td>
                           {Array.from(carMap.entries()).map(([model, cellData]) => (
                               <td key={`${slot}-${model}`} className={`px-2 py-2 whitespace-nowrap text-center ${cellData?.type === 'unavailable' ? 'bg-gray-100' : ''}`}>
                                   {cellData?.type === 'booking' ? (
