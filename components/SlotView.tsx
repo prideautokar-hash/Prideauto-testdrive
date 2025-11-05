@@ -10,6 +10,8 @@ interface SlotViewProps {
   setSelectedDate: (date: Date) => void;
   openBookingModal: (data?: Partial<Booking>) => void;
   onDeleteBooking: (bookingId: string) => void;
+  canDelete: boolean;
+  canAdd: boolean;
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -22,7 +24,7 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 
-const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
+const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
 
@@ -90,13 +92,15 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
             }}
             className="border border-gray-300 rounded-md shadow-sm p-2"
           />
-          <button
-            onClick={() => openBookingModal({ date: selectedDateStringForInput })}
-            style={{ backgroundColor: '#98B6D7' }}
-            className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm whitespace-nowrap"
-          >
-            + เพิ่มการจอง
-          </button>
+          {canAdd && (
+            <button
+                onClick={() => openBookingModal({ date: selectedDateStringForInput })}
+                style={{ backgroundColor: '#98B6D7' }}
+                className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm whitespace-nowrap"
+            >
+                + เพิ่มการจอง
+            </button>
+          )}
         </div>
       </div>
 
@@ -126,32 +130,40 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                                            <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
                                            <p className="text-gray-700">{booking.carModel}</p>
                                            <p className="text-xs text-gray-500 mt-1">เซลล์: {booking.salesperson}</p>
-                                           <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                onDeleteBooking(booking.id);
-                                              }}
-                                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full bg-white/50"
-                                              title="ลบการจอง"
-                                           >
-                                             <TrashIcon className="w-4 h-4" />
-                                           </button>
+                                           {canDelete && (
+                                             <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  onDeleteBooking(booking.id);
+                                                }}
+                                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full bg-white/50"
+                                                title="ลบการจอง"
+                                             >
+                                               <TrashIcon className="w-4 h-4" />
+                                             </button>
+                                           )}
                                        </li>
                                    ))}
                                 </ul>
-                                {availableCarModels.length > 0 && (
+                                {canAdd && availableCarModels.length > 0 && (
                                      <button className="w-full text-center py-2 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors text-sm font-medium" onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}>+ เพิ่มการจอง</button>
                                 )}
                             </>
                         ) : (
                              availableCarModels.length > 0 ? (
-                                <button
-                                    className="w-full text-center py-4 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
-                                    onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
-                                    aria-label={`จองเวลา ${slot}`}
-                                >
-                                    ว่าง
-                                </button>
+                                canAdd ? (
+                                    <button
+                                        className="w-full text-center py-4 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
+                                        onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}
+                                        aria-label={`จองเวลา ${slot}`}
+                                    >
+                                        ว่าง
+                                    </button>
+                                ) : (
+                                    <div className="w-full text-center py-4 rounded-md bg-green-50 text-green-700">
+                                        ว่าง
+                                    </div>
+                                )
                              ) : (
                                 <div className="w-full text-center py-4 rounded-md bg-gray-100 text-gray-500">
                                     เต็ม

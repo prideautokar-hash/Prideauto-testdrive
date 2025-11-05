@@ -9,9 +9,10 @@ interface BookingModalProps {
   initialData?: Partial<Booking>;
   bookings: Booking[];
   unavailability: Unavailability[];
+  canSave: boolean;
 }
 
-const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability }) => {
+const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability, canSave }) => {
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -158,7 +159,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button type="button" onClick={handleClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">ยกเลิก</button>
-              <button type="submit" style={{ backgroundColor: '#7D9AB9' }} className="text-white px-4 py-2 rounded-md hover:opacity-90 disabled:bg-gray-400" disabled={availableCarModels.length === 0}>บันทึก</button>
+              <button type="submit" style={{ backgroundColor: '#7D9AB9' }} className="text-white px-4 py-2 rounded-md hover:opacity-90 disabled:bg-gray-400" disabled={availableCarModels.length === 0 || !canSave}>บันทึก</button>
             </div>
           </form>
         </div>

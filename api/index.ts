@@ -12,7 +12,6 @@ const pool = new Pool({
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-for-dev';
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 
 // Helper function to parse JSON body
 async function parseJSONBody(req: IncomingMessage): Promise<any> {
@@ -41,12 +40,12 @@ function sendResponse(res: ServerResponse, statusCode: number, data: any) {
 }
 
 // Helper to verify JWT token
-function verifyToken(req: IncomingMessage): { userId: number; username: string } | null {
+function verifyToken(req: IncomingMessage): { userId: number; username: string; role: string; } | null {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return null;
     try {
-        return jwt.verify(token, JWT_SECRET) as { userId: number, username: string };
+        return jwt.verify(token, JWT_SECRET) as { userId: number, username: string, role: string };
     } catch (e) {
         return null;
     }
@@ -78,16 +77,15 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                 const client = await pool.connect();
                 try {
-                    const userResult = await client.query('SELECT id, password_hash FROM public.users WHERE username = $1', [username]);
+                    const userResult = await client.query('SELECT id, password_hash, role FROM public.users WHERE username = $1', [username]);
                     if (userResult.rows.length === 0) {
                         return sendResponse(res, 401, { message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
                     }
                     const user = userResult.rows[0];
 
                     if (password === user.password_hash) {
-                        const isAdmin = username === ADMIN_USERNAME;
-                        const token = jwt.sign({ userId: user.id, username: username }, JWT_SECRET, { expiresIn: '8h' });
-                        sendResponse(res, 200, { token, isAdmin });
+                        const token = jwt.sign({ userId: user.id, username: username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+                        sendResponse(res, 200, { token, role: user.role });
                     } else {
                         sendResponse(res, 401, { message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
                     }
@@ -183,6 +181,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     await client.query('COMMIT');
                     sendResponse(res, 201, newBookingResult.rows[0]);
                 } else if (req.method === 'DELETE') {
+                    if (userData.role !== 'admin') {
+                        return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+                    }
                     const { id } = await parseJSONBody(req);
                     if (!id) return sendResponse(res, 400, { message: 'Booking ID is required' });
                     const deleteResult = await client.query('DELETE FROM public.bookings WHERE id = $1', [id]);
@@ -227,6 +228,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     sendResponse(res, 200, formattedRows);
 
                 } else if (req.method === 'POST') {
+                    if (userData.role !== 'admin') {
+                        return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+                    }
                     const { carModel, date, period, reason, branch } = await parseJSONBody(req);
                     
                     const carResult = await client.query('SELECT id FROM public.cars WHERE model_name = $1', [carModel]);
@@ -269,6 +273,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     sendResponse(res, 201, newUnavailability.rows[0]);
 
                 } else if (req.method === 'DELETE') {
+                    if (userData.role !== 'admin') {
+                        return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+                    }
                     const { id } = await parseJSONBody(req);
                     if (!id) return sendResponse(res, 400, { message: 'ID is required' });
                     const deleteResult = await client.query('DELETE FROM public.car_unavailability WHERE id = $1', [id]);
@@ -305,6 +312,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 } else if (req.method === 'POST') {
                     const userData = verifyToken(req);
                     if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+                    if (userData.role !== 'admin') {
+                        return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+                    }
                     const { key, value } = await parseJSONBody(req);
                     if (!key || value === undefined) return sendResponse(res, 400, { message: 'Key and value are required' });
                     
@@ -325,7 +335,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
         // --- SQL ENDPOINT ---
         else if (url.pathname.endsWith('/sql')) {
             const userData = verifyToken(req);
-            if (!userData || userData.username !== ADMIN_USERNAME) {
+            if (!userData || userData.role !== 'admin') {
                 return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
             }
 

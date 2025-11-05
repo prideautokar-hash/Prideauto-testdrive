@@ -1,11 +1,11 @@
 import { Booking, Branch, Unavailability, CarModel } from '../types';
 import apiClient from './apiClient';
 
-export const login = async (username: string, password: string): Promise<{ token: string; isAdmin: boolean }> => {
+export const login = async (username: string, password: string): Promise<{ token: string; role: string }> => {
   if (!username || !password) {
       throw new Error('Username and password are required');
   }
-  return apiClient<{ token: string; isAdmin: boolean }>('login', {
+  return apiClient<{ token: string; role: string }>('login', {
     data: { username, password },
     method: 'POST'
   });

@@ -8,6 +8,8 @@ interface CalendarViewProps {
   setSelectedDate: (date: Date) => void;
   openBookingModal: (data?: Partial<Booking>) => void;
   onDeleteBooking: (bookingId: string) => void;
+  canDelete: boolean;
+  canAdd: boolean;
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -19,7 +21,7 @@ const toYYYYMMDD = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd }) => {
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
@@ -82,8 +84,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
       cells.push(
         <div 
           key={day}
-          className={`border-t border-gray-200 p-1 h-20 flex flex-col cursor-pointer transition-colors group ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+          className={`border-t border-gray-200 p-1 h-20 flex flex-col ${canAdd ? 'cursor-pointer' : ''} transition-colors group ${isSelected ? 'bg-blue-50' : (canAdd ? 'hover:bg-gray-50' : '')}`}
           onClick={() => {
+            if (!canAdd) return;
             setSelectedDate(date);
             openBookingModal({ date: toYYYYMMDD(date) });
           }}
@@ -109,13 +112,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
     <div className="p-4 md:p-6">
        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">ปฏิทินการจอง</h1>
-        <button
-          onClick={() => openBookingModal({ date: toYYYYMMDD(selectedDate) })}
-          style={{ backgroundColor: '#98B6D7' }}
-          className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm"
-        >
-          + เพิ่มการจอง
-        </button>
+        {canAdd && (
+            <button
+              onClick={() => openBookingModal({ date: toYYYYMMDD(selectedDate) })}
+              style={{ backgroundColor: '#98B6D7' }}
+              className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm"
+            >
+              + เพิ่มการจอง
+            </button>
+        )}
       </div>
       <div className="bg-white p-4 rounded-lg border shadow">
         {renderHeader()}
@@ -160,16 +165,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
                             <p className="text-sm text-gray-500">เซลล์</p>
                             <p className="text-sm font-medium text-gray-800">{booking.salesperson}</p>
                           </div>
-                          <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteBooking(booking.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full"
-                            title="ลบการจอง"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
+                          {canDelete && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteBooking(booking.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full"
+                                title="ลบการจอง"
+                            >
+                                <TrashIcon className="w-5 h-5" />
+                            </button>
+                          )}
                       </div>
                   </div>
                 </li>

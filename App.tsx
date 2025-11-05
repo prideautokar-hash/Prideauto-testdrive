@@ -11,14 +11,13 @@ import LoginPage from './components/LoginPage';
 import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability } from './services/apiService';
 import { Logo } from './components/Logo';
 import UnavailableCarsView from './components/UnavailableCarsView';
-import SqlEditorView from './components/SqlEditorView';
 
-type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable' | 'sql';
+type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable';
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
     const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
-    const [isUserAdmin, setIsUserAdmin] = useState(false); // To show SQL editor
+    const [userRole, setUserRole] = useState<string | null>(null); // 'admin' or 'user'
     
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [unavailability, setUnavailability] = useState<Unavailability[]>([]);
@@ -77,25 +76,32 @@ const App: React.FC = () => {
     useEffect(() => {
         const storedToken = localStorage.getItem('authToken');
         const storedBranch = localStorage.getItem('currentBranch') as Branch;
-        const storedIsAdmin = localStorage.getItem('isUserAdmin') === 'true';
+        const storedUserRole = localStorage.getItem('userRole');
 
-        if (storedToken && storedBranch) {
+        if (storedToken && storedBranch && storedUserRole) {
             setAuthToken(storedToken);
             setCurrentBranch(storedBranch);
-            setIsUserAdmin(storedIsAdmin);
+            setUserRole(storedUserRole);
             fetchData(storedBranch, storedToken);
         } else {
             setIsLoading(false); // Not logged in, stop loading
         }
     }, [fetchData]);
 
+    const isAdmin = userRole === 'admin';
+
     const openBookingModal = useCallback((data?: Partial<Booking>) => {
+        if (!isAdmin) return;
         setModalInitialData(data);
         setIsModalOpen(true);
-    }, []);
+    }, [isAdmin]);
 
     const handleSaveBooking = async (newBookingData: Omit<Booking, 'id' | 'branch' | 'carId'>) => {
         if (!currentBranch || !authToken) return;
+        if (!isAdmin) {
+            alert('คุณไม่มีสิทธิ์ในการบันทึกข้อมูล');
+            return;
+        }
         
         try {
             await addBooking(newBookingData, currentBranch, authToken);
@@ -108,7 +114,10 @@ const App: React.FC = () => {
     };
     
     const handleDeleteBooking = async (bookingId: string) => {
-        if (!currentBranch || !authToken) return;
+        if (!currentBranch || !authToken || !isAdmin) {
+            alert('คุณไม่มีสิทธิ์ในการลบข้อมูล');
+            return;
+        };
 
         if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบการจองนี้?')) {
             try {
@@ -147,23 +156,23 @@ const App: React.FC = () => {
     };
 
 
-    const handleLoginSuccess = (branch: Branch, token: string, isAdmin: boolean) => {
+    const handleLoginSuccess = (branch: Branch, token: string, role: string) => {
         localStorage.setItem('authToken', token);
         localStorage.setItem('currentBranch', branch);
-        localStorage.setItem('isUserAdmin', String(isAdmin));
+        localStorage.setItem('userRole', role);
         setAuthToken(token);
         setCurrentBranch(branch);
-        setIsUserAdmin(isAdmin);
+        setUserRole(role);
         fetchData(branch, token);
     };
 
     const handleLogout = () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('currentBranch');
-        localStorage.removeItem('isUserAdmin');
+        localStorage.removeItem('userRole');
         setAuthToken(null);
         setCurrentBranch(null);
-        setIsUserAdmin(false);
+        setUserRole(null);
         setBookings([]);
         setUnavailability([]);
         setAppLogo(null);
@@ -192,15 +201,15 @@ const App: React.FC = () => {
 
         switch (currentPage) {
             case 'calendar':
-                return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
+                return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} />;
             case 'slots':
-                return <SlotView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} />;
+                return <SlotView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} />;
             case 'usage':
                 return <CarUsageView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
             case 'dashboard':
                 return <DashboardView bookings={bookings} />;
             case 'unavailable':
-                return <UnavailableCarsView 
+                return isAdmin ? <UnavailableCarsView 
                             bookings={bookings}
                             unavailability={unavailability} 
                             selectedDate={selectedDate} 
@@ -208,9 +217,7 @@ const App: React.FC = () => {
                             carModels={CAR_MODELS}
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
-                        />;
-            case 'sql':
-                return isUserAdmin && authToken ? <SqlEditorView authToken={authToken} /> : <p>Access Denied</p>;
+                        /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
             default:
                 return null;
         }
@@ -248,7 +255,7 @@ const App: React.FC = () => {
             {/* Desktop top nav */}
             <header className="bg-white border-b hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-sm z-20">
                 <div className="flex items-center gap-4">
-                    <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
+                    <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={isAdmin ? handleLogoUpload : undefined} />
                      <span className="text-gray-600 text-sm font-medium">สาขา: {currentBranch}</span>
                 </div>
                 <nav className="flex items-center gap-2">
@@ -256,9 +263,7 @@ const App: React.FC = () => {
                     <DesktopNavItem page="slots" label="Slots" icon={<ListIcon />} />
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
-                    <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />
-                    {/* The icon for the SQL Editor was a React Fragment which cannot accept a className. It has been wrapped in a span to resolve the error. */}
-                    {isUserAdmin && <DesktopNavItem page="sql" label="SQL Editor" icon={<span>⚙️</span>} />}
+                    {isAdmin && <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />}
                 </nav>
                  <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
                     ออกจากระบบ
@@ -269,7 +274,7 @@ const App: React.FC = () => {
             <div className="md:pt-16">
                 <header className="bg-white p-4 shadow-sm sticky top-0 z-30 md:hidden border-b">
                     <div className="flex justify-between items-center w-full">
-                        <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={handleLogoUpload} />
+                        <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={isAdmin ? handleLogoUpload : undefined} />
                         <div className="text-right">
                            <p className="text-sm font-semibold text-gray-600">สาขา: {currentBranch}</p>
                            <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white px-2 py-0.5 rounded text-xs mt-1 hover:opacity-90 transition-colors">
@@ -288,7 +293,7 @@ const App: React.FC = () => {
                 <MobileNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-6 h-6" />} />
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
-                <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />
+                {isAdmin && <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />}
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             
@@ -299,6 +304,7 @@ const App: React.FC = () => {
                 initialData={modalInitialData}
                 bookings={bookings}
                 unavailability={unavailability}
+                canSave={isAdmin}
             />
         </div>
     );

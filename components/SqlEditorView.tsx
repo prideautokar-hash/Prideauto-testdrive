@@ -5,13 +5,28 @@ interface SqlEditorViewProps {
     authToken: string;
 }
 
-const DEFAULT_QUERY = `-- This script creates the 'car_unavailability' table.
--- This feature allows blocking cars for periods like maintenance or other reasons.
--- Press 'Execute' to run it.
+const DEFAULT_QUERY = `-- ACTION REQUIRED FOR USER ROLES --
+-- To enable Admin/Sale roles, please run the following queries.
 
--- Drop the table if it exists to allow for re-running the script
+-- 1. Add a 'role' column to the 'users' table. Default is 'sale'.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'sale' NOT NULL;
+
+-- 2. Assign the 'admin' role to your main admin user.
+-- !! IMPORTANT: Change 'admin' to your actual admin username if it's different. !!
+UPDATE public.users SET role = 'admin' WHERE username = 'admin';
+
+-- After running, all other users will be 'sale' by default.
+-- You can grant admin rights to other users with:
+-- UPDATE public.users SET role = 'admin' WHERE username = 'another_admin_username';
+
+-- SELECT * FROM public.users; -- Uncomment to view users and their roles
+
+
+-- =========================================================================
+-- Previous setup scripts (can be run again if needed)
+
+-- This script creates the 'car_unavailability' table.
 DROP TABLE IF EXISTS car_unavailability;
-
 CREATE TABLE car_unavailability (
     id SERIAL PRIMARY KEY,
     car_id INT NOT NULL,
@@ -27,11 +42,9 @@ CREATE TABLE car_unavailability (
     FOREIGN KEY (branch_id) REFERENCES Branches(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by_user_id) REFERENCES Users(id) ON DELETE SET NULL
 );
-
--- Optional: Add an index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_car_unavailability_date_branch ON car_unavailability (unavailability_date, branch_id);
 
--- This query creates the table needed to store app settings like the logo.
+-- This script creates the table for app settings like the logo.
 DROP TABLE IF EXISTS app_settings;
 CREATE TABLE app_settings (
   key VARCHAR(255) PRIMARY KEY,
