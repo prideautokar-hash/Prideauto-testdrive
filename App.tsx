@@ -6,14 +6,13 @@ import SlotView from './components/SlotView';
 import CarUsageView from './components/CarUsageView';
 import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
-import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon, DatabaseIcon } from './components/icons';
+import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
 import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability } from './services/apiService';
 import { Logo } from './components/Logo';
 import UnavailableCarsView from './components/UnavailableCarsView';
-import SqlEditorView from './components/SqlEditorView';
 
-type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable' | 'sqleditor';
+type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable';
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
@@ -219,8 +218,6 @@ const App: React.FC = () => {
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
                         /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
-            case 'sqleditor':
-                return isAdmin ? <SqlEditorView authToken={authToken!} /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
             default:
                 return null;
         }
@@ -267,7 +264,6 @@ const App: React.FC = () => {
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     {isAdmin && <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />}
-                    {isAdmin && <DesktopNavItem page="sqleditor" label="SQL Editor" icon={<DatabaseIcon />} />}
                 </nav>
                  <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
                     ออกจากระบบ
@@ -298,7 +294,6 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 {isAdmin && <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />}
-                {isAdmin && <MobileNavItem page="sqleditor" label="SQL" icon={<DatabaseIcon className="w-6 h-6" />} />}
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             
