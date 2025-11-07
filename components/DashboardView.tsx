@@ -98,28 +98,72 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
         };
     }, [bookings]);
 
-    const lineChartData = useMemo(() => {
+    const { lineChartData, lineChartTitle } = useMemo(() => {
         const filteredBookings = lineChartCarModel === 'all'
             ? bookings
             : bookings.filter(b => b.carModel === lineChartCarModel);
 
+        let title = '';
+
+        if (lineChartPeriod === 'day') {
+            let year: number, month: number; // month is 0-11
+            
+            if (filteredBookings.length > 0) {
+                 const latestBookingDateStr = filteredBookings.reduce((latest, current) => {
+                    return current.date > latest ? current.date : latest;
+                }, '1970-01-01');
+                const [parsedYear, parsedMonth] = latestBookingDateStr.split('-').map(Number);
+                year = parsedYear;
+                month = parsedMonth - 1; 
+            } else {
+                const today = new Date();
+                year = today.getFullYear();
+                month = today.getMonth();
+            }
+            
+            const monthName = new Date(year, month).toLocaleString('th-TH', { month: 'long', year: 'numeric' });
+            title = `ข้อมูลเดือน ${monthName}`;
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthStr = String(month + 1).padStart(2, '0');
+            const yearStr = String(year);
+
+            const datesOfMonth = Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                return `${yearStr}-${monthStr}-${String(day).padStart(2, '0')}`;
+            });
+
+            const countsByDate = new Map<string, number>();
+            filteredBookings.forEach(booking => {
+                if (booking.date.startsWith(`${yearStr}-${monthStr}`)) {
+                    countsByDate.set(booking.date, (countsByDate.get(booking.date) || 0) + 1);
+                }
+            });
+
+            const data = datesOfMonth.map(dateStr => ({
+                date: dateStr.substring(5),
+                count: countsByDate.get(dateStr) || 0,
+            }));
+
+            return { lineChartData: data, lineChartTitle: title };
+        }
+
         const countsByDate = new Map<string, number>();
-        
         filteredBookings.forEach(booking => {
             let key;
-            if (lineChartPeriod === 'day') {
-                key = booking.date; // YYYY-MM-DD
-            } else if (lineChartPeriod === 'month') {
-                key = booking.date.substring(0, 7); // YYYY-MM
-            } else { // year
-                key = booking.date.substring(0, 4); // YYYY
+            if (lineChartPeriod === 'month') {
+                key = booking.date.substring(0, 7);
+            } else { 
+                key = booking.date.substring(0, 4);
             }
             countsByDate.set(key, (countsByDate.get(key) || 0) + 1);
         });
 
-        return Array.from(countsByDate.entries())
+        const data = Array.from(countsByDate.entries())
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => a.date.localeCompare(b.date));
+        
+        return { lineChartData: data, lineChartTitle: title };
 
     }, [bookings, lineChartPeriod, lineChartCarModel]);
 
@@ -164,7 +208,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Line Chart */}
                 <div className="bg-white p-6 rounded-lg shadow border">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">สถิติการ Test Drive</h3>
+                    <div className="mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">สถิติการ Test Drive</h3>
+                        {lineChartTitle && <p className="text-sm text-gray-500">{lineChartTitle}</p>}
+                    </div>
                     <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
                         <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
                             <ChartButton label="วัน" period="day" current={lineChartPeriod} setter={setLineChartPeriod} />
