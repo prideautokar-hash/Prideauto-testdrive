@@ -53,7 +53,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, name }:
 
 
 const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
-    const [lineChartPeriod, setLineChartPeriod] = useState<'day' | 'month' | 'year'>('month');
+    const [lineChartPeriod, setLineChartPeriod] = useState<'day' | 'month' | 'year'>('day');
     const [lineChartCarModel, setLineChartCarModel] = useState<string>('all');
     const [pieChartPeriod, setPieChartPeriod] = useState<'day' | 'month' | 'year'>('month');
     
