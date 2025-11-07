@@ -5,17 +5,33 @@ interface SqlEditorViewProps {
     authToken: string;
 }
 
-const DEFAULT_QUERY = `-- ACTION REQUIRED FOR USER ROLES --
--- To enable Admin/Sale roles, please run the following queries.
+const DEFAULT_QUERY = `-- ACTION REQUIRED: USER REGISTRATION & APPROVAL SETUP --
+-- To enable user registration and the approval system, please run the queries below.
 
--- 1. Add a 'role' column to the 'users' table. Default is 'sale'.
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'sale' NOT NULL;
+-- 1. Add 'internal_note' for nicknames and 'status' for account approval.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS internal_note TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'not approved' NOT NULL;
+
+-- 2. IMPORTANT: Approve all your existing users so they can continue to log in.
+-- This is a one-time step. New users will require manual approval.
+UPDATE public.users SET status = 'approved' WHERE status != 'approved';
+
+-- TO APPROVE A NEW USER:
+-- UPDATE public.users SET status = 'approved' WHERE username = 'new_username_to_approve';
+
+-- =========================================================================
+
+-- ACTION REQUIRED FOR USER ROLES --
+-- To enable Admin/user roles, please run the following queries.
+
+-- 1. Add a 'role' column to the 'users' table. Default is 'user'.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'user' NOT NULL;
 
 -- 2. Assign the 'admin' role to your main admin user.
 -- !! IMPORTANT: Change 'admin' to your actual admin username if it's different. !!
 UPDATE public.users SET role = 'admin' WHERE username = 'admin';
 
--- After running, all other users will be 'sale' by default.
+-- After running, all other users will be 'user' by default.
 -- You can grant admin rights to other users with:
 -- UPDATE public.users SET role = 'admin' WHERE username = 'another_admin_username';
 

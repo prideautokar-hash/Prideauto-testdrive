@@ -77,11 +77,15 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                 const client = await pool.connect();
                 try {
-                    const userResult = await client.query('SELECT id, password_hash, role FROM public.users WHERE username = $1', [username]);
+                    const userResult = await client.query('SELECT id, password_hash, role, status FROM public.users WHERE username = $1', [username]);
                     if (userResult.rows.length === 0) {
                         return sendResponse(res, 401, { message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
                     }
                     const user = userResult.rows[0];
+
+                    if (user.status !== 'approved') {
+                        return sendResponse(res, 403, { message: 'บัญชีของคุณกำลังรอการอนุมัติ' });
+                    }
 
                     if (password === user.password_hash) {
                         const token = jwt.sign({ userId: user.id, username: username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
@@ -93,7 +97,39 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     client.release();
                 }
             }
-        } 
+        }
+        // --- REGISTER ENDPOINT ---
+        else if (url.pathname.endsWith('/register')) {
+            if (req.method === 'POST') {
+                const { username, password, nickname } = await parseJSONBody(req);
+                if (!username || !password || !nickname) {
+                    return sendResponse(res, 400, { message: 'Username, password and nickname are required' });
+                }
+
+                const client = await pool.connect();
+                try {
+                    const existingUser = await client.query('SELECT id FROM public.users WHERE username = $1', [username]);
+                    if (existingUser.rows.length > 0) {
+                        return sendResponse(res, 409, { message: 'ชื่อผู้ใช้นี้ถูกใช้ไปแล้ว' });
+                    }
+                    
+                    await client.query(
+                        `INSERT INTO public.users (username, password_hash, role, internal_note, status) 
+                         VALUES ($1, $2, 'user', $3, 'not approved')`,
+                        [username, password, nickname]
+                    );
+
+                    sendResponse(res, 201, { message: 'ลงทะเบียนสำเร็จ กำลังรอการอนุมัติ' });
+                } catch (err) {
+                    console.error('Registration DB Error:', err);
+                    sendResponse(res, 500, { message: 'Internal Server Error during registration' });
+                } finally {
+                    client.release();
+                }
+            } else {
+                sendResponse(res, 405, { message: 'Method Not Allowed' });
+            }
+        }
         // --- BOOKINGS ENDPOINT ---
         else if (url.pathname.endsWith('/bookings')) {
              const userData = verifyToken(req);

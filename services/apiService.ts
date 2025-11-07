@@ -11,6 +11,16 @@ export const login = async (username: string, password: string): Promise<{ token
   });
 };
 
+export const register = async (username: string, password: string, nickname: string): Promise<{ message: string }> => {
+  if (!username || !password || !nickname) {
+      throw new Error('Username, password and nickname are required');
+  }
+  return apiClient<{ message: string }>('register', {
+    data: { username, password, nickname },
+    method: 'POST'
+  });
+};
+
 export const getBookings = async (branch: Branch, token: string): Promise<Booking[]> => {
   return apiClient<Booking[]>(`bookings?branch=${encodeURIComponent(branch)}`, { token });
 };
