@@ -243,7 +243,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
 
         return (
             <ResponsiveContainer>
-                <BarChart layout="vertical" data={stockData} margin={{ top: 20, right: 30, left: 5, bottom: 5 }}>
+                <BarChart layout="vertical" data={stockData} margin={{ top: 20, right: 30, left: -30, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" allowDecimals={false} />
                     <YAxis type="category" dataKey="model" width={250} tick={{ fontSize: 11 }} interval={0} />
