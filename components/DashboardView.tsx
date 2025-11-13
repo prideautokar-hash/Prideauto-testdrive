@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, BarChart, Bar, LabelList,
 } from 'recharts';
 import { Booking, CarModel } from '../types';
 import { CAR_MODELS } from '../constants';
+import { getStockData } from '../services/apiService';
 
 interface DashboardViewProps {
   bookings: Booking[];
+  authToken: string;
 }
 
 const StatCard: React.FC<{ title: string; value: string | number; description?: string }> = ({ title, value, description }) => (
@@ -52,10 +54,37 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, name }:
 };
 
 
-const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
+const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) => {
     const [lineChartPeriod, setLineChartPeriod] = useState<'day' | 'month' | 'year'>('day');
     const [lineChartCarModel, setLineChartCarModel] = useState<string>('all');
     const [pieChartPeriod, setPieChartPeriod] = useState<'day' | 'month' | 'year'>('month');
+
+    const [stockData, setStockData] = useState<{ model: string; count: number }[]>([]);
+    const [stockLoading, setStockLoading] = useState(true);
+    const [stockError, setStockError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchStockData = async () => {
+            if (!authToken) {
+                setStockError('Authentication token not found.');
+                setStockLoading(false);
+                return;
+            };
+            try {
+                setStockLoading(true);
+                const data = await getStockData(authToken);
+                setStockData(data);
+                setStockError(null);
+            } catch (err: any) {
+                setStockError(err.message || 'ไม่สามารถโหลดข้อมูลสต๊อกรถได้');
+                console.error(err);
+            } finally {
+                setStockLoading(false);
+            }
+        };
+
+        fetchStockData();
+    }, [authToken]);
     
     const generalStats = useMemo(() => {
         if (bookings.length === 0) {
@@ -201,6 +230,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
         </button>
     );
 
+    const renderStockChart = () => {
+        if (stockLoading) return <div className="flex items-center justify-center h-full text-gray-500">กำลังโหลดข้อมูลสต๊อก...</div>;
+        if (stockError) return <div className="flex items-center justify-center h-full text-red-500">{stockError}</div>;
+        if (stockData.length === 0) return <div className="flex items-center justify-center h-full text-gray-500">ไม่มีข้อมูลสต๊อกรถ</div>;
+
+        return (
+            <ResponsiveContainer>
+                <BarChart data={stockData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="model" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} interval={0} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" name="จำนวนในสต๊อก" fill="#98B6D7">
+                        <LabelList dataKey="count" position="top" />
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+        );
+    };
+
     return (
         <div className="p-4 md:p-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
@@ -277,6 +327,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings }) => {
                             </div>
                          )}
                     </div>
+                </div>
+            </div>
+
+            <div className="mt-6 bg-white p-6 rounded-lg shadow border">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">รถในสต๊อก (ตามรุ่น)</h3>
+                <div style={{ width: '100%', height: 400 }}>
+                    {renderStockChart()}
                 </div>
             </div>
 

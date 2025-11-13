@@ -85,6 +85,10 @@ export const setAppSetting = async (key: string, value: string, token: string): 
     });
 };
 
+export const getStockData = async (token: string): Promise<{ model: string; count: number }[]> => {
+    return apiClient<{ model: string; count: number }[]>('stock', { token });
+};
+
 export const executeSql = async (query: string, token: string): Promise<any> => {
     return apiClient<any>('sql', {
         data: { query },

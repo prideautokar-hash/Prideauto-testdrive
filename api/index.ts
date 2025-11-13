@@ -11,6 +11,19 @@ const pool = new Pool({
     }
 });
 
+const externalConnectionString = process.env.EXTERNAL_DB_URL;
+if (!externalConnectionString) {
+    console.warn('Warning: EXTERNAL_DB_URL is not set. The stock chart feature will be unavailable.');
+}
+
+const externalPool = externalConnectionString ? new Pool({
+    connectionString: externalConnectionString,
+    ssl: {
+        rejectUnauthorized: false
+    }
+}) : null;
+
+
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-for-dev';
 
 // Helper function to parse JSON body
@@ -324,6 +337,37 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                  sendResponse(res, 500, { message: 'Internal Server Error' });
             } finally {
                 client.release();
+            }
+        }
+        // --- STOCK ENDPOINT ---
+        else if (url.pathname.endsWith('/stock')) {
+            const userData = verifyToken(req);
+            if (!userData) {
+                return sendResponse(res, 401, { message: 'Authentication required' });
+            }
+
+            if (req.method === 'GET') {
+                if (!externalPool) {
+                    return sendResponse(res, 503, { message: 'External database connection is not configured on the server.' });
+                }
+                const client = await externalPool.connect();
+                try {
+                    const result = await client.query(`
+                        SELECT model, COUNT(*)::INTEGER as count 
+                        FROM public.cars 
+                        WHERE status = 'In Stock' 
+                        GROUP BY model 
+                        ORDER BY count DESC
+                    `);
+                    sendResponse(res, 200, result.rows);
+                } catch (err) {
+                    console.error('External Stock DB Error:', err);
+                    sendResponse(res, 500, { message: 'Internal Server Error fetching stock data' });
+                } finally {
+                    client.release();
+                }
+            } else {
+                sendResponse(res, 405, { message: 'Method Not Allowed' });
             }
         }
         // --- SETTINGS ENDPOINT ---
