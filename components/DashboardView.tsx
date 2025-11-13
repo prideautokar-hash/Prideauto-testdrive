@@ -72,9 +72,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
             };
             try {
                 setStockLoading(true);
-                const data = await getStockData(authToken);
+                const rawData = await getStockData(authToken);
+                const processedData = rawData.map(item => ({
+                    ...item,
+                    model: item.model.replace('BYD ', '').trim(),
+                }));
                 // Sort data alphabetically by model name before setting state
-                const sortedData = data.sort((a, b) => a.model.localeCompare(b.model));
+                const sortedData = processedData.sort((a, b) => a.model.localeCompare(b.model));
                 setStockData(sortedData);
                 setStockError(null);
             } catch (err: any) {
@@ -242,7 +246,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
                 <BarChart layout="vertical" data={stockData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" allowDecimals={false} />
-                    <YAxis type="category" dataKey="model" width={150} tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="model" width={180} tick={{ fontSize: 11 }} interval={0} />
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="count" name="จำนวนในสต๊อก" fill="#98B6D7">
