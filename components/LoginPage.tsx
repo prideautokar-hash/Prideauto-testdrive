@@ -170,7 +170,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         {view === 'login' ? renderLoginForm() : renderRegisterForm()}
         
         <p className="text-center text-xs text-gray-400 pt-4">
-          PRIDE AUTO Test Drive application Version 1.03
+          © 2025 PRIDE AUTO Test Drive application.<br />
+          All rights reserved. Version 1.0.3
         </p>
       </div>
     </div>
