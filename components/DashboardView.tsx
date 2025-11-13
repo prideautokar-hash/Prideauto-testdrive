@@ -246,7 +246,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
                 <BarChart layout="vertical" data={stockData} margin={{ top: 20, right: 30, left: 5, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" allowDecimals={false} />
-                    <YAxis type="category" dataKey="model" width={200} tick={{ fontSize: 11 }} interval={0} />
+                    <YAxis type="category" dataKey="model" width={250} tick={{ fontSize: 11 }} interval={0} />
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="count" name="จำนวนในสต๊อก" fill="#98B6D7">
