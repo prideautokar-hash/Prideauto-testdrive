@@ -73,7 +73,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
             try {
                 setStockLoading(true);
                 const data = await getStockData(authToken);
-                setStockData(data);
+                // Sort data alphabetically by model name before setting state
+                const sortedData = data.sort((a, b) => a.model.localeCompare(b.model));
+                setStockData(sortedData);
                 setStockError(null);
             } catch (err: any) {
                 setStockError(err.message || 'ไม่สามารถโหลดข้อมูลสต๊อกรถได้');
@@ -237,14 +239,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
 
         return (
             <ResponsiveContainer>
-                <BarChart data={stockData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                <BarChart layout="vertical" data={stockData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="model" tick={{ fontSize: 12 }} angle={-45} textAnchor="end" height={80} interval={0} />
-                    <YAxis allowDecimals={false} />
+                    <XAxis type="number" allowDecimals={false} />
+                    <YAxis type="category" dataKey="model" width={150} tick={{ fontSize: 12 }} />
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="count" name="จำนวนในสต๊อก" fill="#98B6D7">
-                        <LabelList dataKey="count" position="top" />
+                        <LabelList dataKey="count" position="right" />
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
