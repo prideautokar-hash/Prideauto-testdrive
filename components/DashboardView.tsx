@@ -63,6 +63,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
     const [stockLoading, setStockLoading] = useState(true);
     const [stockError, setStockError] = useState<string | null>(null);
 
+    // Responsive margin for the stock chart
+    const [stockChartMargin, setStockChartMargin] = useState({ top: 20, right: 30, left: -30, bottom: 5 });
+
+    useEffect(() => {
+        const handleResize = () => {
+            // Mobile view (tailwind 'md' breakpoint is 768px)
+            if (window.innerWidth < 768) {
+                // Pull further left and reduce right margin to expand chart
+                setStockChartMargin({ top: 20, right: 20, left: -80, bottom: 5 });
+            } else { // Desktop view
+                // Pull less to the left to avoid text cutoff
+                setStockChartMargin({ top: 20, right: 30, left: -30, bottom: 5 });
+            }
+        };
+        
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Set initial margin
+        
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     useEffect(() => {
         const fetchStockData = async () => {
             if (!authToken) {
@@ -243,7 +264,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
 
         return (
             <ResponsiveContainer>
-                <BarChart layout="vertical" data={stockData} margin={{ top: 20, right: 30, left: -70, bottom: 5 }}>
+                <BarChart layout="vertical" data={stockData} margin={stockChartMargin}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" allowDecimals={false} />
                     <YAxis type="category" dataKey="model" width={250} tick={{ fontSize: 11 }} interval={0} />
