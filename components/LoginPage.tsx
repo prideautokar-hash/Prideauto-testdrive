@@ -171,7 +171,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         
         <p className="text-center text-xs text-gray-400 pt-4">
           © 2025 PRIDE AUTO Test Drive application.<br />
-          All rights reserved. Version 1.1.4
+          All rights reserved. Version 1.1.5
         </p>
       </div>
     </div>
