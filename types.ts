@@ -5,7 +5,7 @@ export enum CarModel {
   DOLPHIN = 'BYD Dolphin',
   SEALION6 = 'BYD Sealion 6 DM-i',
   SEALION7 = 'BYD Sealion 7',
-  SEAL5 = 'BYD Seal 5 DM-i',
+  SEAL5 = 'BYD Seal 5 DM-i Premium',
   M6 = 'BYD M6',
   ATTO1 = 'BYD Atto1',
   ATTO2 = 'BYD Atto2',

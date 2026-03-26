@@ -26,7 +26,7 @@ const SHORT_CAR_MODEL_NAMES: Record<CarModel, string> = {
   [CarModel.DOLPHIN]: 'Dolphin',
   [CarModel.SEALION6]: 'Sealion 6',
   [CarModel.SEALION7]: 'Sealion 7',
-  [CarModel.SEAL5]: 'Seal 5',
+  [CarModel.SEAL5]: 'Seal 5 PRE',
   [CarModel.M6]: 'M6',
   [CarModel.ATTO1]: 'Atto 1',
   [CarModel.ATTO2]: 'Atto 2',
