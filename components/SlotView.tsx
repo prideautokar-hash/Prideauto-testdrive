@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Booking, Unavailability } from '../types';
-import { TIME_SLOTS, CAR_MODELS } from '../constants';
+import { TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
 import { TrashIcon } from './icons';
 
 interface SlotViewProps {
@@ -111,7 +111,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
             
             const bookedCarModels = new Set(slotBookings.map(b => b.carModel));
             const unavailableCarModels = new Set(slotUnavailability.map(u => u.carModel));
-            const availableCarModels = CAR_MODELS.filter(m => !bookedCarModels.has(m) && !unavailableCarModels.has(m));
+            const availableCarModels = AVAILABLE_CAR_MODELS.filter(m => !bookedCarModels.has(m) && !unavailableCarModels.has(m));
             
             const hasBookings = slotBookings.length > 0;
 

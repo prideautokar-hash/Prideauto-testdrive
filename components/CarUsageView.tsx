@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Booking, CarModel, Unavailability } from '../types';
-import { TIME_SLOTS, CAR_MODELS } from '../constants';
+import { TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
 import { CheckIcon, XIcon } from './icons';
 
 interface CarUsageViewProps {
@@ -55,7 +55,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     
     TIME_SLOTS.forEach(slot => {
       const slotMap = new Map<CarModel, GridCell>();
-      CAR_MODELS.forEach(model => slotMap.set(model, null));
+      AVAILABLE_CAR_MODELS.forEach(model => slotMap.set(model, null));
       grid.set(slot, slotMap);
     });
 
@@ -80,7 +80,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
   
   const carUsageStatus = useMemo(() => {
     const statusMap = new Map<CarModel, boolean>();
-    CAR_MODELS.forEach(model => statusMap.set(model, false));
+    AVAILABLE_CAR_MODELS.forEach(model => statusMap.set(model, false));
     
     bookingsForSelectedDate.forEach(booking => {
         statusMap.set(booking.carModel, true);
@@ -125,7 +125,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
               <thead className="bg-gray-50">
                   <tr>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">เวลา</th>
-                      {CAR_MODELS.map(model => (
+                      {AVAILABLE_CAR_MODELS.map(model => (
                           <th key={model} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{SHORT_CAR_MODEL_NAMES[model]}</th>
                       ))}
                   </tr>
@@ -133,7 +133,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
               <tbody className="bg-white divide-y divide-gray-200">
                   <tr className="font-semibold text-xs">
                         <td className="px-2 py-2 sticky left-0 bg-gray-50 z-10 text-gray-600 uppercase">สถานะ</td>
-                        {CAR_MODELS.map(model => {
+                        {AVAILABLE_CAR_MODELS.map(model => {
                             const isUsed = carUsageStatus.get(model);
                             return (
                                 <td key={`status-${model}`} className={`px-2 py-2 text-center ${isUsed ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
