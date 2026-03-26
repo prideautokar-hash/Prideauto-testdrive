@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Booking, Branch, Unavailability, CarModel } from './types';
-import { CAR_MODELS } from './constants';
+import { CAR_MODELS, AVAILABLE_CAR_MODELS } from './constants';
 import CalendarView from './components/CalendarView';
 import SlotView from './components/SlotView';
 import CarUsageView from './components/CarUsageView';
@@ -214,7 +214,7 @@ const App: React.FC = () => {
                             unavailability={unavailability} 
                             selectedDate={selectedDate} 
                             setSelectedDate={setSelectedDate} 
-                            carModels={CAR_MODELS}
+                            carModels={AVAILABLE_CAR_MODELS}
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
                         /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;

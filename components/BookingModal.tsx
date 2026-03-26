@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Booking, CarModel, Unavailability } from '../types';
-import { CAR_MODELS, TIME_SLOTS } from '../constants';
+import { CAR_MODELS, TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -17,11 +17,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
   const [phoneNumber, setPhoneNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[0]);
-  const [carModel, setCarModel] = useState<CarModel>(CAR_MODELS[0]);
+  const [carModel, setCarModel] = useState<CarModel>(AVAILABLE_CAR_MODELS[0] || CAR_MODELS[0]);
   const [notes, setNotes] = useState('');
   const [salesperson, setSalesperson] = useState('');
   const [error, setError] = useState('');
-  const [availableCarModels, setAvailableCarModels] = useState<CarModel[]>(CAR_MODELS);
+  const [availableCarModels, setAvailableCarModels] = useState<CarModel[]>(AVAILABLE_CAR_MODELS);
 
   // Effect to initialize form state when modal opens
   useEffect(() => {
@@ -53,7 +53,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
             .map(u => u.carModel)
     );
 
-    const availableModels = CAR_MODELS.filter(m => 
+    const availableModels = AVAILABLE_CAR_MODELS.filter(m => 
         !bookedCarModelsInSlot.has(m) && !unavailableCarModelsInSlot.has(m)
     );
     
@@ -62,7 +62,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     // If the previously selected car model is no longer available,
     // switch to the first available one. Otherwise, keep the selection.
     if (!availableModels.includes(carModel)) {
-      setCarModel(availableModels[0] || CAR_MODELS[0]);
+      setCarModel(availableModels[0] || AVAILABLE_CAR_MODELS[0] || CAR_MODELS[0]);
     }
   }, [isOpen, date, timeSlot, bookings, unavailability]);
 
@@ -97,7 +97,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     setPhoneNumber('');
     setDate(new Date().toISOString().split('T')[0]);
     setTimeSlot(TIME_SLOTS[0]);
-    setCarModel(CAR_MODELS[0]);
+    setCarModel(AVAILABLE_CAR_MODELS[0] || CAR_MODELS[0]);
     setNotes('');
     setSalesperson('');
     setError('');
