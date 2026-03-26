@@ -7,6 +7,11 @@ export enum CarModel {
   SEALION7 = 'BYD Sealion 7',
   SEAL5 = 'BYD Seal 5 DM-i',
   M6 = 'BYD M6',
+  ATTO1 = 'BYD Atto1',
+  ATTO2 = 'BYD Atto2',
+  SEAL6 = 'BYD Seal 6',
+  SEALION5 = 'BYD Sealion 5 DM-i',
+  SEAL5_STD = 'BYD Seal 5 DM-i Standard',
 }
 
 export enum Branch {
