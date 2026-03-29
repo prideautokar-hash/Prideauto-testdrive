@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Booking } from '../types';
+import React, { useMemo, useState } from 'react';
+import { Booking, Branch } from '../types';
 import { TrashIcon } from './icons';
 
 interface CalendarViewProps {
@@ -22,6 +22,7 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd }) => {
+  const [summaryTab, setSummaryTab] = useState<'all' | Branch>('all');
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
 
@@ -42,8 +43,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
   
   const bookingsForSelectedDate = useMemo(() => {
     const dateStr = toYYYYMMDD(selectedDate);
-    return bookingsByDate.get(dateStr)?.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)) || [];
-  }, [bookingsByDate, selectedDate]);
+    const dayBookings = bookingsByDate.get(dateStr)?.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot)) || [];
+    if (summaryTab === 'all') return dayBookings;
+    return dayBookings.filter(b => b.branch === summaryTab);
+  }, [bookingsByDate, selectedDate, summaryTab]);
 
   const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
   
@@ -79,12 +82,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
       const date = new Date(currentYear, currentMonth, day);
       const dateStr = toYYYYMMDD(date);
       const dayBookings = bookingsByDate.get(dateStr) || [];
+      const mskCount = dayBookings.filter(b => b.branch === Branch.MAHASARAKHAM).length;
+      const klsCount = dayBookings.filter(b => b.branch === Branch.KALASIN).length;
       const isSelected = toYYYYMMDD(selectedDate) === dateStr;
 
       cells.push(
         <div 
           key={day}
-          className={`border-t border-gray-200 p-1 h-20 flex flex-col ${canAdd ? 'cursor-pointer' : ''} transition-colors group ${isSelected ? 'bg-blue-50' : (canAdd ? 'hover:bg-gray-50' : '')}`}
+          className={`border-t border-gray-200 p-1 h-24 flex flex-col ${canAdd ? 'cursor-pointer' : ''} transition-colors group ${isSelected ? 'bg-blue-50' : (canAdd ? 'hover:bg-gray-50' : '')}`}
           onClick={() => {
             if (!canAdd) return;
             setSelectedDate(date);
@@ -93,14 +98,18 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
         >
           <span className={`self-end font-medium text-sm p-1 rounded-full w-6 h-6 flex items-center justify-center ${isSelected ? 'bg-blue-500 text-white' : 'text-gray-700'}`}>{day}</span>
           
-          {dayBookings.length > 0 && (
-            <div className="flex-grow flex items-center justify-center">
-              <p className="text-green-600 font-bold text-xl flex items-baseline gap-1">
-                {dayBookings.length}
-                <span className="text-xs font-medium text-gray-500">คิว</span>
+          <div className="flex-grow flex flex-col items-center justify-center gap-0.5">
+            {mskCount > 0 && (
+              <p className="text-green-600 font-bold text-xs flex items-baseline gap-0.5">
+                MSK: {mskCount}
               </p>
-            </div>
-          )}
+            )}
+            {klsCount > 0 && (
+              <p className="text-blue-600 font-bold text-xs flex items-baseline gap-0.5">
+                KLS: {klsCount}
+              </p>
+            )}
+          </div>
         </div>
       );
     }
@@ -129,36 +138,61 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
       </div>
 
       <div className="mt-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
             <h3 className="text-xl font-bold text-gray-800">
                 สรุปการจอง
             </h3>
-            <input
-                type="date"
-                value={toYYYYMMDD(selectedDate)}
-                onChange={(e) => {
-                    if (e.target.value) {
-                        const [year, month, day] = e.target.value.split('-').map(Number);
-                        setSelectedDate(new Date(year, month - 1, day));
-                    }
-                }}
-                className="border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                aria-label="เลือกวันที่สำหรับสรุปการจอง"
-            />
+            <div className="flex items-center gap-4">
+                <div className="flex bg-gray-100 p-1 rounded-md">
+                    <button 
+                        onClick={() => setSummaryTab('all')}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === 'all' ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        ทั้งหมด
+                    </button>
+                    <button 
+                        onClick={() => setSummaryTab(Branch.MAHASARAKHAM)}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === Branch.MAHASARAKHAM ? 'bg-white shadow-sm text-green-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        MSK
+                    </button>
+                    <button 
+                        onClick={() => setSummaryTab(Branch.KALASIN)}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === Branch.KALASIN ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        KLS
+                    </button>
+                </div>
+                <input
+                    type="date"
+                    value={toYYYYMMDD(selectedDate)}
+                    onChange={(e) => {
+                        if (e.target.value) {
+                            const [year, month, day] = e.target.value.split('-').map(Number);
+                            setSelectedDate(new Date(year, month - 1, day));
+                        }
+                    }}
+                    className="border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    aria-label="เลือกวันที่สำหรับสรุปการจอง"
+                />
+            </div>
         </div>
         <p className="text-gray-600 mb-4 -mt-2">
              {selectedDate.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
 
         {bookingsForSelectedDate.length > 0 ? (
-          <div className="bg-white rounded-lg border shadow">
+          <div className="bg-white rounded-lg border shadow overflow-hidden">
             <ul className="divide-y divide-gray-200">
               {bookingsForSelectedDate.map(booking => (
                 <li key={booking.id} className="p-4 hover:bg-gray-50 transition-colors duration-150 group">
                   <div className="flex items-center justify-between gap-4">
-                      <div>
-                          <p className="font-semibold text-gray-800">{booking.timeSlot} - <span className="text-gray-500 font-medium">ลูกค้า:</span> {booking.customerName}</p>
-                          <p className="text-sm text-gray-600">{booking.carModel} ({booking.branch})</p>
+                      <div className="flex items-start gap-3">
+                          <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${booking.branch === Branch.MAHASARAKHAM ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+                          <div>
+                              <p className="font-semibold text-gray-800">{booking.timeSlot} - <span className="text-gray-500 font-medium">ลูกค้า:</span> {booking.customerName}</p>
+                              <p className="text-sm text-gray-600">{booking.carModel} <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${booking.branch === Branch.MAHASARAKHAM ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>{booking.branch}</span></p>
+                          </div>
                       </div>
                       <div className="text-right flex-shrink-0 flex items-center gap-2">
                           <div>
@@ -185,7 +219,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
           </div>
         ) : (
           <div className="bg-white p-6 rounded-lg border shadow text-center">
-            <p className="text-gray-500">ไม่มีการจองสำหรับวันที่เลือก</p>
+            <p className="text-gray-500">ไม่มีการจองสำหรับวันที่เลือก{summaryTab !== 'all' ? ` (สาขา ${summaryTab})` : ''}</p>
           </div>
         )}
       </div>

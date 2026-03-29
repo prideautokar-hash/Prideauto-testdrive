@@ -18,7 +18,6 @@ type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable' | 'cars
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
-    const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null); // 'admin' or 'user'
     
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -35,64 +34,48 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [appLogo, setAppLogo] = useState<string | null>(null);
 
-    const fetchData = useCallback(async (branch: Branch, token: string) => {
+    const fetchData = useCallback(async (token: string) => {
         setIsLoading(true);
         setError(null);
         try {
             const results = await Promise.allSettled([
-                getBookings(branch, token),
-                getUnavailability(branch, token),
+                // Fetch for both branches
+                getBookings(Branch.MAHASARAKHAM, token),
+                getBookings(Branch.KALASIN, token),
+                getUnavailability(Branch.MAHASARAKHAM, token),
+                getUnavailability(Branch.KALASIN, token),
                 getAppSetting('app_logo', token),
                 getCars(token),
                 getBranches(token),
-                getSalespeople(branch, token)
+                getSalespeople(Branch.MAHASARAKHAM, token),
+                getSalespeople(Branch.KALASIN, token)
             ]);
 
-            const bookingsResult = results[0];
-            const unavailabilityResult = results[1];
-            const appLogoResult = results[2];
-            const carsResult = results[3];
-            const branchesResult = results[4];
-            const salespeopleResult = results[5];
+            const mskBookings = results[0].status === 'fulfilled' ? results[0].value : [];
+            const klsBookings = results[1].status === 'fulfilled' ? results[1].value : [];
+            setBookings([...mskBookings, ...klsBookings]);
 
-            if (bookingsResult.status === 'fulfilled') {
-                setBookings(bookingsResult.value);
-            } else {
-                console.error('Failed to fetch bookings:', bookingsResult.reason);
-                setError('ไม่สามารถดึงข้อมูลการจองได้');
-            }
-
-            if (unavailabilityResult.status === 'fulfilled') {
-                setUnavailability(unavailabilityResult.value);
-            } else {
-                console.warn('Failed to fetch unavailability, defaulting to empty:', unavailabilityResult.reason);
-                setUnavailability([]); // Gracefully fail
-            }
+            const mskUnavailability = results[2].status === 'fulfilled' ? results[2].value : [];
+            const klsUnavailability = results[3].status === 'fulfilled' ? results[3].value : [];
+            setUnavailability([...mskUnavailability, ...klsUnavailability]);
             
-            if (appLogoResult.status === 'fulfilled') {
-                setAppLogo(appLogoResult.value.value);
+            if (results[4].status === 'fulfilled') {
+                setAppLogo(results[4].value.value);
             } else {
-                 console.warn("App logo not found or couldn't be fetched.", appLogoResult.reason);
                  setAppLogo(null);
             }
 
-            if (carsResult.status === 'fulfilled') {
-                setCars(carsResult.value);
-            } else {
-                console.error('Failed to fetch cars:', carsResult.reason);
+            if (results[5].status === 'fulfilled') {
+                setCars(results[5].value);
             }
 
-            if (branchesResult.status === 'fulfilled') {
-                setBranches(branchesResult.value);
-            } else {
-                console.error('Failed to fetch branches:', branchesResult.reason);
+            if (results[6].status === 'fulfilled') {
+                setBranches(results[6].value);
             }
 
-            if (salespeopleResult.status === 'fulfilled') {
-                setSalespeople(salespeopleResult.value);
-            } else {
-                console.error('Failed to fetch salespeople:', salespeopleResult.reason);
-            }
+            const mskSalespeople = results[7].status === 'fulfilled' ? results[7].value : [];
+            const klsSalespeople = results[8].status === 'fulfilled' ? results[8].value : [];
+            setSalespeople([...mskSalespeople, ...klsSalespeople]);
 
         } catch (err) {
             setError('เกิดข้อผิดพลาดที่ไม่คาดคิด');
@@ -104,14 +87,12 @@ const App: React.FC = () => {
 
     useEffect(() => {
         const storedToken = localStorage.getItem('authToken');
-        const storedBranch = localStorage.getItem('currentBranch') as Branch;
         const storedUserRole = localStorage.getItem('userRole');
 
-        if (storedToken && storedBranch && storedUserRole) {
+        if (storedToken && storedUserRole) {
             setAuthToken(storedToken);
-            setCurrentBranch(storedBranch);
             setUserRole(storedUserRole);
-            fetchData(storedBranch, storedToken);
+            fetchData(storedToken);
         } else {
             setIsLoading(false); // Not logged in, stop loading
         }
@@ -127,15 +108,16 @@ const App: React.FC = () => {
     }, [isAdmin]);
 
     const handleSaveBooking = async (newBookingData: Omit<Booking, 'id' | 'branch' | 'carId'>) => {
-        if (!currentBranch || !authToken) return;
+        if (!authToken) return;
         if (!isAdmin) {
             alert('คุณไม่มีสิทธิ์ในการบันทึกข้อมูล');
             return;
         }
         
         try {
-            await addBooking(newBookingData, currentBranch, authToken);
-            fetchData(currentBranch, authToken);
+            const branch = newBookingData.carBranch as Branch;
+            await addBooking(newBookingData, branch, authToken);
+            fetchData(authToken);
             setIsModalOpen(false);
         } catch(err: any) {
             console.error(err);
@@ -144,7 +126,7 @@ const App: React.FC = () => {
     };
     
     const handleDeleteBooking = async (bookingId: string) => {
-        if (!currentBranch || !authToken || !isAdmin) {
+        if (!authToken || !isAdmin) {
             alert('คุณไม่มีสิทธิ์ในการลบข้อมูล');
             return;
         };
@@ -152,7 +134,7 @@ const App: React.FC = () => {
         if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบการจองนี้?')) {
             try {
                 await deleteBooking(bookingId, authToken);
-                fetchData(currentBranch, authToken);
+                fetchData(authToken);
             } catch (err: any) {
                 console.error(err);
                 alert(err.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
@@ -161,23 +143,25 @@ const App: React.FC = () => {
     };
 
     const handleAddUnavailability = async (carModel: CarModel, date: string, period: string, reason: string) => {
-        if (!currentBranch || !authToken) {
+        if (!authToken) {
             throw new Error("Authentication error. Please log in again.");
         }
         try {
-            await addUnavailability({ carModel, date, period, reason, branch: currentBranch }, authToken);
-            fetchData(currentBranch, authToken);
+            const selectedCar = cars.find(c => c.modelName === carModel);
+            const branch = (selectedCar?.branch || Branch.MAHASARAKHAM) as Branch;
+            await addUnavailability({ carModel, date, period, reason, branch }, authToken);
+            fetchData(authToken);
         } catch (err: any) {
             throw err;
         }
     };
 
     const handleDeleteUnavailability = async (id: number) => {
-        if (!currentBranch || !authToken) return;
+        if (!authToken) return;
         if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
             try {
                 await deleteUnavailability(id, authToken);
-                fetchData(currentBranch, authToken);
+                fetchData(authToken);
             } catch (err: any) {
                 console.error(err);
                 alert(err.message || 'เกิดข้อผิดพลาดในการลบข้อมูล');
@@ -186,72 +170,68 @@ const App: React.FC = () => {
     };
 
     const handleAddCar = async (carData: Omit<Car, 'id'>) => {
-        if (!authToken || !currentBranch) return;
+        if (!authToken) return;
         try {
             await addCar(carData, authToken);
-            fetchData(currentBranch, authToken);
+            fetchData(authToken);
         } catch (err: any) {
             throw err;
         }
     };
 
     const handleUpdateCar = async (carData: Car) => {
-        if (!authToken || !currentBranch) return;
+        if (!authToken) return;
         try {
             await updateCar(carData, authToken);
-            fetchData(currentBranch, authToken);
+            fetchData(authToken);
         } catch (err: any) {
             throw err;
         }
     };
 
     const handleDeleteCar = async (id: number) => {
-        if (!authToken || !currentBranch) return;
+        if (!authToken) return;
         try {
             await deleteCar(id, authToken);
-            fetchData(currentBranch, authToken);
+            fetchData(authToken);
         } catch (err: any) {
             throw err;
         }
     };
 
     const handleAddSalesperson = async (salespersonData: Omit<Salesperson, 'id'>) => {
-        if (!authToken || !currentBranch) return;
+        if (!authToken) return;
         try {
             await addSalesperson(salespersonData, authToken);
-            fetchData(currentBranch, authToken);
+            fetchData(authToken);
         } catch (err: any) {
             throw err;
         }
     };
 
     const handleUpdateSalesperson = async (salespersonData: Salesperson) => {
-        if (!authToken || !currentBranch) return;
+        if (!authToken) return;
         try {
             await updateSalesperson(salespersonData, authToken);
-            fetchData(currentBranch, authToken);
+            fetchData(authToken);
         } catch (err: any) {
             throw err;
         }
     };
 
 
-    const handleLoginSuccess = (branch: Branch, token: string, role: string) => {
+    const handleLoginSuccess = (token: string, role: string) => {
         localStorage.setItem('authToken', token);
-        localStorage.setItem('currentBranch', branch);
         localStorage.setItem('userRole', role);
         setAuthToken(token);
-        setCurrentBranch(branch);
         setUserRole(role);
-        fetchData(branch, token);
+        fetchData(token);
     };
 
     const handleLogout = () => {
         localStorage.removeItem('authToken');
-        localStorage.removeItem('currentBranch');
         localStorage.removeItem('userRole');
         setAuthToken(null);
-        setCurrentBranch(null);
         setUserRole(null);
         setBookings([]);
         setUnavailability([]);
@@ -342,7 +322,7 @@ const App: React.FC = () => {
         </button>
     );
 
-    if (!authToken || !currentBranch) {
+    if (!authToken) {
         return <LoginPage onLoginSuccess={handleLoginSuccess} />;
     }
 
@@ -352,7 +332,6 @@ const App: React.FC = () => {
             <header className="bg-white border-b hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-sm z-20">
                 <div className="flex items-center gap-4">
                     <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={isAdmin ? handleLogoUpload : undefined} />
-                     <span className="text-gray-600 text-sm font-medium">สาขา: {currentBranch}</span>
                 </div>
                 <nav className="flex items-center gap-2">
                     <DesktopNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon />} />
@@ -373,7 +352,6 @@ const App: React.FC = () => {
                     <div className="flex justify-between items-center w-full">
                         <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={isAdmin ? handleLogoUpload : undefined} />
                         <div className="text-right">
-                           <p className="text-sm font-semibold text-gray-600">สาขา: {currentBranch}</p>
                            <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white px-2 py-0.5 rounded text-xs mt-1 hover:opacity-90 transition-colors">
                                ออกจากระบบ
                            </button>

@@ -4,7 +4,7 @@ import { login, getAppSetting, register } from '../services/apiService';
 import { Logo } from './Logo';
 
 interface LoginPageProps {
-  onLoginSuccess: (branch: Branch, token: string, role: string) => void;
+  onLoginSuccess: (token: string, role: string) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -14,7 +14,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
-  const [branch, setBranch] = useState<Branch>(Branch.MAHASARAKHAM);
 
   // State management
   const [error, setError] = useState('');
@@ -55,7 +54,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     try {
       const { token, role } = await login(username, password);
-      onLoginSuccess(branch, token, role);
+      onLoginSuccess(token, role);
     } catch (err: any) {
       setError(err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     } finally {
@@ -83,35 +82,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const BranchButton = ({ value, label }: { value: Branch, label: string }) => (
-    <button
-      type="button"
-      onClick={() => setBranch(value)}
-      disabled={isLoading}
-      className={`w-full p-3 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-        branch === value
-          ? 'text-white shadow'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-      } disabled:opacity-50`}
-      style={{
-        backgroundColor: branch === value ? '#98B6D7' : undefined,
-      }}
-    >
-      {label}
-    </button>
-  );
-  
   const renderLoginForm = () => (
     <form className="space-y-4" onSubmit={handleLoginSubmit}>
         {error && <p className="bg-red-100 text-red-700 p-3 rounded-md text-center text-sm">{error}</p>}
         {successMessage && <p className="bg-green-100 text-green-700 p-3 rounded-md text-center text-sm">{successMessage}</p>}
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">เลือกสาขา</label>
-            <div className="grid grid-cols-2 gap-3">
-                <BranchButton value={Branch.MAHASARAKHAM} label={Branch.MAHASARAKHAM} />
-                <BranchButton value={Branch.KALASIN} label={Branch.KALASIN} />
-            </div>
-        </div>
         <div>
             <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-blue-500 focus:border-blue-500" placeholder="ชื่อผู้ใช้" disabled={isLoading} aria-label="ชื่อผู้ใช้" />
         </div>

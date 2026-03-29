@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, LabelList,
 } from 'recharts';
-import { Booking, CarModel } from '../types';
+import { Booking, CarModel, Branch } from '../types';
 import { CAR_MODELS } from '../constants';
 import { getStockData } from '../services/apiService';
 import SearchableSelect from './SearchableSelect';
@@ -56,6 +56,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, name }:
 
 
 const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) => {
+    const [branchFilter, setBranchFilter] = useState<'all' | Branch>('all');
     const [lineChartPeriod, setLineChartPeriod] = useState<'day' | 'month' | 'year'>('day');
     const [lineChartCarModel, setLineChartCarModel] = useState<string>('all');
     const [pieChartPeriod, setPieChartPeriod] = useState<'day' | 'month' | 'year'>('month');
@@ -113,9 +114,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
 
         fetchStockData();
     }, [authToken]);
+
+    const filteredBookingsByBranch = useMemo(() => {
+        if (branchFilter === 'all') return bookings;
+        return bookings.filter(b => b.branch === branchFilter);
+    }, [bookings, branchFilter]);
     
     const generalStats = useMemo(() => {
-        if (bookings.length === 0) {
+        if (filteredBookingsByBranch.length === 0) {
             return {
                 totalBookings: 0,
                 upcomingBookings: 0,
@@ -131,7 +137,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
         const thisMonthStr = today.toLocaleDateString('en-CA').substring(0, 7); // YYYY-MM
         const salespersonCountsThisMonth = new Map<string, number>();
         
-        bookings.forEach(booking => {
+        filteredBookingsByBranch.forEach(booking => {
             // All-time car popularity
             carCounts.set(booking.carModel, (carCounts.get(booking.carModel) || 0) + 1);
             
@@ -145,20 +151,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
         const busiestSalespersonEntry = [...salespersonCountsThisMonth.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
         
         const todayString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-        const upcomingBookings = bookings.filter(b => b.date >= todayString).length;
+        const upcomingBookings = filteredBookingsByBranch.filter(b => b.date >= todayString).length;
 
         return {
-            totalBookings: bookings.length,
+            totalBookings: filteredBookingsByBranch.length,
             upcomingBookings,
             mostPopularCar: { name: mostPopularCarEntry[0] || 'N/A', count: mostPopularCarEntry[1] },
             busiestSalesperson: { name: busiestSalespersonEntry[0] || 'N/A', count: busiestSalespersonEntry[1] },
         };
-    }, [bookings]);
+    }, [filteredBookingsByBranch]);
 
     const { lineChartData, lineChartTitle } = useMemo(() => {
         const filteredBookings = lineChartCarModel === 'all'
-            ? bookings
-            : bookings.filter(b => b.carModel === lineChartCarModel);
+            ? filteredBookingsByBranch
+            : filteredBookingsByBranch.filter(b => b.carModel === lineChartCarModel);
 
         let title = '';
 
@@ -222,7 +228,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
         
         return { lineChartData: data, lineChartTitle: title };
 
-    }, [bookings, lineChartPeriod, lineChartCarModel]);
+    }, [filteredBookingsByBranch, lineChartPeriod, lineChartCarModel]);
 
     const pieChartData = useMemo(() => {
         const today = new Date();
@@ -230,7 +236,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
         const thisMonthStr = todayStr.substring(0, 7);
         const thisYearStr = todayStr.substring(0, 4);
 
-        const filteredBookings = bookings.filter(booking => {
+        const filteredBookings = filteredBookingsByBranch.filter(booking => {
             if (pieChartPeriod === 'day') return booking.date === todayStr;
             if (pieChartPeriod === 'month') return booking.date.startsWith(thisMonthStr);
             if (pieChartPeriod === 'year') return booking.date.startsWith(thisYearStr);
@@ -246,7 +252,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
 
-    }, [bookings, pieChartPeriod]);
+    }, [filteredBookingsByBranch, pieChartPeriod]);
 
     const ChartButton = ({ label, period, current, setter }: any) => (
         <button
@@ -281,7 +287,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
 
     return (
         <div className="p-4 md:p-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+                <div className="flex bg-gray-100 p-1 rounded-lg">
+                    <button 
+                        onClick={() => setBranchFilter('all')}
+                        className={`px-4 py-2 text-sm rounded-md transition-colors ${branchFilter === 'all' ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        รวมทุกสาขา
+                    </button>
+                    <button 
+                        onClick={() => setBranchFilter(Branch.MAHASARAKHAM)}
+                        className={`px-4 py-2 text-sm rounded-md transition-colors ${branchFilter === Branch.MAHASARAKHAM ? 'bg-white shadow-sm text-green-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        มหาสารคาม
+                    </button>
+                    <button 
+                        onClick={() => setBranchFilter(Branch.KALASIN)}
+                        className={`px-4 py-2 text-sm rounded-md transition-colors ${branchFilter === Branch.KALASIN ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        กาฬสินธุ์
+                    </button>
+                </div>
+            </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Line Chart */}
