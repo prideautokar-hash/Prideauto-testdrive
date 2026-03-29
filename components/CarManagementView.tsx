@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Car, Branch, Salesperson, User, Booking, Unavailability } from '../types';
 import { TrashIcon, WrenchIcon, UserIcon, CarIcon, ChartIcon, ListIcon } from './icons';
 import { getUsers, addUser, updateUser, deleteUser, getReportBookings, getReportUnavailability, executeSql } from '../services/apiService';
+import SearchableSelect from './SearchableSelect';
 
 interface CarManagementViewProps {
     cars: Car[];
@@ -296,15 +297,11 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">สังกัดสาขา*</label>
-                                    <select 
+                                    <SearchableSelect 
                                         value={carBranchId} 
-                                        onChange={e => setCarBranchId(Number(e.target.value))}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        {branches.map(b => (
-                                            <option key={b.id} value={b.id}>{b.name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={val => setCarBranchId(Number(val))}
+                                        options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -323,15 +320,11 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">สังกัดสาขา*</label>
-                                    <select 
+                                    <SearchableSelect 
                                         value={salespersonBranchId} 
-                                        onChange={e => setSalespersonBranchId(Number(e.target.value))}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        {branches.map(b => (
-                                            <option key={b.id} value={b.id}>{b.name}</option>
-                                        ))}
-                                    </select>
+                                        onChange={val => setSalespersonBranchId(Number(val))}
+                                        options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                    />
                                 </div>
                             </div>
                         )}
@@ -360,26 +353,26 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">บทบาท (Role)*</label>
-                                    <select 
+                                    <SearchableSelect 
                                         value={userRole} 
-                                        onChange={e => setUserRole(e.target.value as any)}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="user">User</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="executive">Executive</option>
-                                    </select>
+                                        onChange={val => setUserRole(val as any)}
+                                        options={[
+                                            { value: 'user', label: 'User' },
+                                            { value: 'admin', label: 'Admin' },
+                                            { value: 'executive', label: 'Executive' }
+                                        ]}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">สถานะ (Status)*</label>
-                                    <select 
+                                    <SearchableSelect 
                                         value={userStatus} 
-                                        onChange={e => setUserStatus(e.target.value as any)}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        <option value="not approved">Not Approved</option>
-                                        <option value="approved">Approved</option>
-                                    </select>
+                                        onChange={val => setUserStatus(val as any)}
+                                        options={[
+                                            { value: 'not approved', label: 'Not Approved' },
+                                            { value: 'approved', label: 'Approved' }
+                                        ]}
+                                    />
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700">หมายเหตุ (Note)</label>

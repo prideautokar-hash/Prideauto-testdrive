@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Booking, CarModel, Unavailability, Car } from '../types';
 import { TrashIcon } from './icons';
 import { TIME_SLOTS } from '../constants';
+import SearchableSelect from './SearchableSelect';
 
 interface UnavailableCarsViewProps {
     bookings: Booking[];
@@ -148,35 +149,36 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">รุ่นรถ</label>
-                                <select value={selectedCarModel} onChange={e => setSelectedCarModel(e.target.value as CarModel)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
-                                    {carModels.map(car => (
-                                        <option key={car.id} value={car.modelName}>
-                                            {car.modelName} ({car.branch})
-                                        </option>
-                                    ))}
-                                </select>
+                                <SearchableSelect 
+                                    value={selectedCarModel} 
+                                    onChange={val => setSelectedCarModel(val as CarModel)} 
+                                    options={carModels.map(car => ({
+                                        value: car.modelName,
+                                        label: `${car.modelName} (${car.branch})`
+                                    }))}
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">ช่วงเวลา</label>
-                                <select value={period} onChange={e => setPeriod(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="morning">ครึ่งเช้า (08:00 - 13:00)</option>
-                                    <option value="afternoon">ครึ่งบ่าย (13:00 - 17:00)</option>
-                                    <option value="all-day">ทั้งวัน (08:00 - 17:00)</option>
-                                    <option value="custom-slot">ระบุตามช่วงเวลา (Slot)</option>
-                                </select>
+                                <SearchableSelect 
+                                    value={period} 
+                                    onChange={setPeriod} 
+                                    options={[
+                                        { value: 'morning', label: 'ครึ่งเช้า (08:00 - 13:00)' },
+                                        { value: 'afternoon', label: 'ครึ่งบ่าย (13:00 - 17:00)' },
+                                        { value: 'all-day', label: 'ทั้งวัน (08:00 - 17:00)' },
+                                        { value: 'custom-slot', label: 'ระบุตามช่วงเวลา (Slot)' }
+                                    ]}
+                                />
                             </div>
                             {period === 'custom-slot' && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">เลือก Slot เวลา (30 นาที)</label>
-                                    <select 
+                                    <SearchableSelect 
                                         value={selectedSlot} 
-                                        onChange={e => setSelectedSlot(e.target.value)} 
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                                    >
-                                        {TIME_SLOTS.map(slot => (
-                                            <option key={slot} value={slot}>{slot}</option>
-                                        ))}
-                                    </select>
+                                        onChange={setSelectedSlot} 
+                                        options={TIME_SLOTS.map(slot => ({ value: slot, label: slot }))}
+                                    />
                                 </div>
                             )}
                             <div>

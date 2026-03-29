@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Booking, Unavailability, Car } from '../types';
+import { Booking, Unavailability, Car, CarModel } from '../types';
 import { TIME_SLOTS } from '../constants';
 import { TrashIcon } from './icons';
 
@@ -29,7 +29,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
 
-  const activeCarModels = useMemo(() => carModels.filter(c => c.isActive).map(c => c.modelName), [carModels]);
+  const activeCarModels = useMemo(() => carModels.filter(c => c.isActive).map(c => c.modelName as CarModel), [carModels]);
 
   const bookingsForSelectedDate = useMemo(() => {
     return bookings

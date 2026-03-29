@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Booking, CarModel, Unavailability, Car, Salesperson } from '../types';
 import { CAR_MODELS, TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
+import SearchableSelect from './SearchableSelect';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -82,12 +83,16 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
       return;
     }
     
+    const selectedCar = carModels.find(m => m.modelName === carModel);
+    const carBranch = selectedCar?.branch || '';
+
     onSave({
       customerName,
       phoneNumber,
       date,
       timeSlot,
       carModel,
+      carBranch,
       notes,
       salesperson,
     });
@@ -99,7 +104,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     setPhoneNumber('');
     setDate(new Date().toISOString().split('T')[0]);
     setTimeSlot(TIME_SLOTS[0]);
-    setCarModel(carModels[0] || CAR_MODELS[0]);
+    setCarModel(carModels[0]?.modelName as CarModel || CAR_MODELS[0]);
     setNotes('');
     setSalesperson('');
     setError('');
@@ -130,25 +135,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">เวลา*</label>
-                <select
+                <SearchableSelect
                     value={timeSlot}
-                    onChange={e => setTimeSlot(e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                    {TIME_SLOTS.map(slot => <option key={slot} value={slot}>{slot}</option>)}
-                </select>
+                    onChange={setTimeSlot}
+                    options={TIME_SLOTS.map(slot => ({ value: slot, label: slot }))}
+                />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">รุ่นรถ*</label>
               {availableCarModels.length > 0 ? (
-                <select value={carModel} onChange={e => setCarModel(e.target.value as CarModel)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
-                    {availableCarModels.map(car => (
-                      <option key={car.id} value={car.modelName}>
-                        {car.modelName} ({car.branch})
-                      </option>
-                    ))}
-                </select>
+                <SearchableSelect 
+                  value={carModel} 
+                  onChange={val => setCarModel(val as CarModel)} 
+                  options={availableCarModels.map(car => ({
+                    value: car.modelName,
+                    label: `${car.modelName} (${car.branch})`
+                  }))}
+                />
               ) : (
                 <div className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2 text-gray-500">
                     ไม่มีรถว่างในเวลานี้
@@ -157,16 +161,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">ชื่อเซลส์*</label>
-              <select 
+              <SearchableSelect 
                 value={salesperson} 
-                onChange={e => setSalesperson(e.target.value)} 
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">เลือกเซลส์</option>
-                {salespeople.map(s => (
-                  <option key={s.id} value={s.name}>{s.name}</option>
-                ))}
-              </select>
+                onChange={setSalesperson} 
+                options={salespeople.map(s => ({ value: s.name, label: s.name }))}
+                placeholder="เลือกเซลส์"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">หมายเหตุ</label>

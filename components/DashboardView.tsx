@@ -6,6 +6,7 @@ import {
 import { Booking, CarModel } from '../types';
 import { CAR_MODELS } from '../constants';
 import { getStockData } from '../services/apiService';
+import SearchableSelect from './SearchableSelect';
 
 interface DashboardViewProps {
   bookings: Booking[];
@@ -295,14 +296,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken }) =>
                             <ChartButton label="เดือน" period="month" current={lineChartPeriod} setter={setLineChartPeriod} />
                             <ChartButton label="ปี" period="year" current={lineChartPeriod} setter={setLineChartPeriod} />
                         </div>
-                        <select
+                        <SearchableSelect
                             value={lineChartCarModel}
-                            onChange={(e) => setLineChartCarModel(e.target.value)}
-                            className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
-                        >
-                            <option value="all">รถทุกรุ่น</option>
-                            {CAR_MODELS.map(model => <option key={model} value={model}>{model}</option>)}
-                        </select>
+                            onChange={setLineChartCarModel}
+                            options={[
+                                { value: 'all', label: 'รถทุกรุ่น' },
+                                ...CAR_MODELS.map(model => ({ value: model, label: model }))
+                            ]}
+                            className="!mt-0 min-w-[150px]"
+                        />
                     </div>
                     <div style={{ width: '100%', height: 300 }}>
                         <ResponsiveContainer>
