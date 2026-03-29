@@ -159,7 +159,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     `);
                     sendResponse(res, 200, result.rows);
                 } else if (req.method === 'POST') {
-                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
                     const { modelName, branchId, isActive } = await parseJSONBody(req);
                     const result = await client.query(`
                         WITH inserted AS (
@@ -173,7 +173,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     `, [modelName, branchId, isActive !== undefined ? isActive : true]);
                     sendResponse(res, 201, result.rows[0]);
                 } else if (req.method === 'PUT') {
-                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
                     const { id, modelName, branchId, isActive } = await parseJSONBody(req);
                     const result = await client.query(`
                         WITH updated AS (
@@ -189,7 +189,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     if (result.rowCount === 0) return sendResponse(res, 404, { message: 'Car not found' });
                     sendResponse(res, 200, result.rows[0]);
                 } else if (req.method === 'DELETE') {
-                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
                     const carId = url.searchParams.get('id');
                     if (!carId) return sendResponse(res, 400, { message: 'Car ID is required' });
                     
@@ -300,7 +300,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     await client.query('COMMIT');
                     sendResponse(res, 201, newBookingResult.rows[0]);
                 } else if (req.method === 'DELETE') {
-                    if (userData.role !== 'admin') {
+                    if (userData.role !== 'admin' && userData.role !== 'executive') {
                         return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
                     }
                     const { id } = await parseJSONBody(req);
@@ -358,7 +358,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     const result = await client.query(query, params);
                     sendResponse(res, 200, result.rows);
                 } else if (req.method === 'POST') {
-                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
                     const { name, branchId, isActive } = await parseJSONBody(req);
                     const result = await client.query(
                         'INSERT INTO public.salespeople (name, branch_id, is_active) VALUES ($1, $2, $3) RETURNING id, name, is_active as "isActive", branch_id as "branchId"',
@@ -366,7 +366,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     );
                     sendResponse(res, 201, result.rows[0]);
                 } else if (req.method === 'PUT') {
-                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
                     const { id, name, branchId, isActive } = await parseJSONBody(req);
                     const result = await client.query(
                         'UPDATE public.salespeople SET name = $1, branch_id = $2, is_active = $3 WHERE id = $4 RETURNING id, name, is_active as "isActive", branch_id as "branchId"',
@@ -414,7 +414,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     sendResponse(res, 200, formattedRows);
 
                 } else if (req.method === 'POST') {
-                    if (userData.role !== 'admin') {
+                    if (userData.role !== 'admin' && userData.role !== 'executive') {
                         return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
                     }
                     const { carModel, date, period, reason, branch } = await parseJSONBody(req);
@@ -466,7 +466,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     sendResponse(res, 201, newUnavailability.rows[0]);
 
                 } else if (req.method === 'DELETE') {
-                    if (userData.role !== 'admin') {
+                    if (userData.role !== 'admin' && userData.role !== 'executive') {
                         return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
                     }
                     const { id } = await parseJSONBody(req);
@@ -536,7 +536,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 } else if (req.method === 'POST') {
                     const userData = verifyToken(req);
                     if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
-                    if (userData.role !== 'admin') {
+                    if (userData.role !== 'admin' && userData.role !== 'executive') {
                         return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
                     }
                     const { key, value } = await parseJSONBody(req);
@@ -559,7 +559,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
         // --- SQL ENDPOINT ---
         else if (url.pathname.endsWith('/sql')) {
             const userData = verifyToken(req);
-            if (!userData || userData.role !== 'admin') {
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
                 return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
             }
 
@@ -585,6 +585,128 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 }
             } else {
                 sendResponse(res, 405, { message: 'Method Not Allowed' });
+            }
+        }
+        // --- USERS ENDPOINT ---
+        else if (url.pathname.endsWith('/users')) {
+            const userData = verifyToken(req);
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
+                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+            }
+
+            const client = await pool.connect();
+            try {
+                if (req.method === 'GET') {
+                    const result = await client.query('SELECT id, username, role, status, internal_note as note FROM public.users ORDER BY username');
+                    sendResponse(res, 200, result.rows);
+                } else if (req.method === 'POST') {
+                    const { username, password, role, status, note } = await parseJSONBody(req);
+                    const result = await client.query(
+                        'INSERT INTO public.users (username, password_hash, role, status, internal_note) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, role, status, internal_note as note',
+                        [username, password, role, status, note]
+                    );
+                    sendResponse(res, 201, result.rows[0]);
+                } else if (req.method === 'PUT') {
+                    const { id, role, status, note } = await parseJSONBody(req);
+                    const result = await client.query(
+                        'UPDATE public.users SET role = $1, status = $2, internal_note = $3 WHERE id = $4 RETURNING id, username, role, status, internal_note as note',
+                        [role, status, note, id]
+                    );
+                    sendResponse(res, 200, result.rows[0]);
+                } else if (req.method === 'DELETE') {
+                    const { id } = await parseJSONBody(req);
+                    await client.query('DELETE FROM public.users WHERE id = $1', [id]);
+                    sendResponse(res, 200, { message: 'User deleted successfully' });
+                }
+            } catch (err) {
+                console.error('Users DB Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
+        // --- REPORTS ENDPOINT ---
+        else if (url.pathname.endsWith('/reports/bookings')) {
+            const userData = verifyToken(req);
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
+                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+            }
+
+            const startDate = url.searchParams.get('startDate');
+            const endDate = url.searchParams.get('endDate');
+
+            const client = await pool.connect();
+            try {
+                const result = await client.query(`
+                    SELECT 
+                        b.id, 
+                        c.name as "customerName", 
+                        c.phone_number as "phoneNumber",
+                        b.booking_date as "date",
+                        to_char(b.booking_time, 'HH24:MI') as "timeSlot",
+                        cr.model_name as "carModel",
+                        br_car.name as "carBranch",
+                        b.notes,
+                        s.name as "salesperson",
+                        br.name as "branch"
+                    FROM public.bookings b
+                    JOIN public.customers c ON b.customer_id = c.id
+                    JOIN public.cars cr ON b.car_id = cr.id
+                    JOIN public.branches br_car ON cr.branch_id = br_car.id
+                    JOIN public.salespeople s ON b.salesperson_id = s.id
+                    JOIN public.branches br ON b.branch_id = br.id
+                    WHERE b.booking_date BETWEEN $1 AND $2
+                    ORDER BY b.booking_date, b.booking_time
+                `, [startDate, endDate]);
+                
+                const formattedRows = result.rows.map(row => ({
+                    ...row,
+                    date: new Date(row.date).toISOString().split('T')[0]
+                }));
+
+                sendResponse(res, 200, formattedRows);
+            } catch (err) {
+                console.error('Reports Bookings Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
+        else if (url.pathname.endsWith('/reports/unavailability')) {
+            const userData = verifyToken(req);
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
+                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+            }
+
+            const startDate = url.searchParams.get('startDate');
+            const endDate = url.searchParams.get('endDate');
+
+            const client = await pool.connect();
+            try {
+                const result = await client.query(`
+                    SELECT u.id, c.model_name as "carModel", b_car.name as "carBranch", u.unavailability_date as "date", 
+                           to_char(u.start_time, 'HH24:MI') as "startTime", 
+                           to_char(u.end_time, 'HH24:MI') as "endTime", u.reason,
+                           br.name as "branch"
+                    FROM public.car_unavailability u
+                    JOIN public.cars c ON u.car_id = c.id
+                    JOIN public.branches b_car ON c.branch_id = b_car.id
+                    JOIN public.branches br ON u.branch_id = br.id
+                    WHERE u.unavailability_date BETWEEN $1 AND $2
+                    ORDER BY u.unavailability_date, u.start_time
+                `, [startDate, endDate]);
+
+                const formattedRows = result.rows.map(row => ({
+                    ...row,
+                    date: new Date(row.date).toISOString().split('T')[0]
+                }));
+
+                sendResponse(res, 200, formattedRows);
+            } catch (err) {
+                console.error('Reports Unavailability Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
             }
         }
         else {

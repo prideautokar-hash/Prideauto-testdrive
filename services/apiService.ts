@@ -1,4 +1,4 @@
-import { Booking, Branch, Unavailability, CarModel, Car, Salesperson } from '../types';
+import { Booking, Branch, Unavailability, CarModel, Car, Salesperson, User } from '../types';
 import apiClient from './apiClient';
 
 export const login = async (username: string, password: string): Promise<{ token: string; role: string }> => {
@@ -146,4 +146,44 @@ export const executeSql = async (query: string, token: string): Promise<any> => 
         token,
         method: 'POST',
     });
+};
+
+// --- Users Management ---
+
+export const getUsers = async (token: string): Promise<User[]> => {
+    return apiClient<User[]>('users', { token });
+};
+
+export const addUser = async (userData: any, token: string): Promise<User> => {
+    return apiClient<User>('users', {
+        data: userData,
+        token,
+        method: 'POST'
+    });
+};
+
+export const updateUser = async (userData: any, token: string): Promise<User> => {
+    return apiClient<User>('users', {
+        data: userData,
+        token,
+        method: 'PUT'
+    });
+};
+
+export const deleteUser = async (id: number, token: string): Promise<void> => {
+    return apiClient<void>('users', {
+        data: { id },
+        token,
+        method: 'DELETE'
+    });
+};
+
+// --- Reports ---
+
+export const getReportBookings = async (startDate: string, endDate: string, token: string): Promise<Booking[]> => {
+    return apiClient<Booking[]>(`reports/bookings?startDate=${startDate}&endDate=${endDate}`, { token });
+};
+
+export const getReportUnavailability = async (startDate: string, endDate: string, token: string): Promise<Unavailability[]> => {
+    return apiClient<Unavailability[]>(`reports/unavailability?startDate=${startDate}&endDate=${endDate}`, { token });
 };

@@ -58,3 +58,11 @@ export interface Unavailability {
     endTime: string; // HH:mm
     reason?: string;
 }
+
+export interface User {
+  id: number;
+  username: string;
+  role: 'admin' | 'user' | 'executive';
+  status: 'approved' | 'not approved';
+  note?: string;
+}

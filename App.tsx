@@ -117,7 +117,8 @@ const App: React.FC = () => {
         }
     }, [fetchData]);
 
-    const isAdmin = userRole === 'admin';
+    const isAdmin = userRole === 'admin' || userRole === 'executive';
+    const isExecutive = userRole === 'executive';
 
     const openBookingModal = useCallback((data?: Partial<Booking>) => {
         if (!isAdmin) return;
@@ -300,9 +301,9 @@ const App: React.FC = () => {
                             carModels={activeCars}
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
-                        /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
+                        /> : <p className="p-6 text-center">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
             case 'cars':
-                return isAdmin ? <CarManagementView 
+                return isExecutive ? <CarManagementView 
                             cars={cars}
                             branches={branches}
                             salespeople={salespeople}
@@ -311,7 +312,8 @@ const App: React.FC = () => {
                             onDeleteCar={handleDeleteCar}
                             onAddSalesperson={handleAddSalesperson}
                             onUpdateSalesperson={handleUpdateSalesperson}
-                        /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
+                            authToken={authToken!}
+                        /> : <p className="p-6 text-center">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
             default:
                 return null;
         }
@@ -358,7 +360,7 @@ const App: React.FC = () => {
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     {isAdmin && <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />}
-                    {isAdmin && <DesktopNavItem page="cars" label="Setting" icon={<SettingsIcon />} />}
+                    {isExecutive && <DesktopNavItem page="cars" label="Setting" icon={<SettingsIcon />} />}
                 </nav>
                  <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
                     ออกจากระบบ
@@ -389,7 +391,7 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 {isAdmin && <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />}
-                {isAdmin && <MobileNavItem page="cars" label="Setting" icon={<SettingsIcon className="w-6 h-6" />} />}
+                {isExecutive && <MobileNavItem page="cars" label="Setting" icon={<SettingsIcon className="w-6 h-6" />} />}
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             
