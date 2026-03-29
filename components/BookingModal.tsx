@@ -20,7 +20,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
   const [phoneNumber, setPhoneNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[0]);
-  const [carModel, setCarModel] = useState<CarModel>(carModels[0]?.modelName as CarModel || CAR_MODELS[0]);
+  const [carModel, setCarModel] = useState<CarModel>('' as CarModel);
   const [notes, setNotes] = useState('');
   const [salesperson, setSalesperson] = useState('');
   const [error, setError] = useState('');
@@ -64,8 +64,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     
     // If the previously selected car model is no longer available,
     // switch to the first available one. Otherwise, keep the selection.
-    if (!availableModels.some(m => m.modelName === carModel)) {
-      setCarModel(availableModels[0]?.modelName as CarModel || carModels[0]?.modelName as CarModel || CAR_MODELS[0]);
+    if (carModel && !availableModels.some(m => m.modelName === carModel)) {
+      setCarModel('' as CarModel);
     }
   }, [isOpen, date, timeSlot, bookings, unavailability, carModels]);
 
@@ -104,7 +104,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     setPhoneNumber('');
     setDate(new Date().toISOString().split('T')[0]);
     setTimeSlot(TIME_SLOTS[0]);
-    setCarModel(carModels[0]?.modelName as CarModel || CAR_MODELS[0]);
+    setCarModel('' as CarModel);
     setNotes('');
     setSalesperson('');
     setError('');
@@ -152,6 +152,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
                     value: car.modelName,
                     label: `${car.modelName} (${car.branch})`
                   }))}
+                  placeholder="เลือกรุ่นรถ"
                 />
               ) : (
                 <div className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2 text-gray-500">

@@ -43,7 +43,7 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     onAddUnavailability,
     onDeleteUnavailability
 }) => {
-    const [selectedCarModel, setSelectedCarModel] = useState<CarModel>(carModels[0]?.modelName as CarModel || '' as CarModel);
+    const [selectedCarModel, setSelectedCarModel] = useState<CarModel>('' as CarModel);
     const [period, setPeriod] = useState<string>('morning');
     const [selectedSlot, setSelectedSlot] = useState<string>(TIME_SLOTS[0]);
     const [reason, setReason] = useState('');
@@ -51,8 +51,8 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
-        if (carModels.length > 0 && (!selectedCarModel || !carModels.some(m => m.modelName === selectedCarModel))) {
-            setSelectedCarModel(carModels[0].modelName as CarModel);
+        if (carModels.length > 0 && selectedCarModel && !carModels.some(m => m.modelName === selectedCarModel)) {
+            setSelectedCarModel('' as CarModel);
         }
     }, [carModels]);
 
@@ -156,6 +156,7 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                                         value: car.modelName,
                                         label: `${car.modelName} (${car.branch})`
                                     }))}
+                                    placeholder="เลือกรุ่นรถ"
                                 />
                             </div>
                             <div>
