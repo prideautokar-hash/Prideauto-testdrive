@@ -153,6 +153,36 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 if (req.method === 'GET') {
                     const result = await client.query('SELECT id, model_name as "modelName", is_active as "isActive", branch FROM public.cars ORDER BY model_name');
                     sendResponse(res, 200, result.rows);
+                } else if (req.method === 'POST') {
+                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    const { modelName, branch, isActive } = await parseJSONBody(req);
+                    const result = await client.query(
+                        'INSERT INTO public.cars (model_name, branch, is_active) VALUES ($1, $2, $3) RETURNING id, model_name as "modelName", is_active as "isActive", branch',
+                        [modelName, branch, isActive !== undefined ? isActive : true]
+                    );
+                    sendResponse(res, 201, result.rows[0]);
+                } else if (req.method === 'PUT') {
+                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    const { id, modelName, branch, isActive } = await parseJSONBody(req);
+                    const result = await client.query(
+                        'UPDATE public.cars SET model_name = $1, branch = $2, is_active = $3 WHERE id = $4 RETURNING id, model_name as "modelName", is_active as "isActive", branch',
+                        [modelName, branch, isActive, id]
+                    );
+                    if (result.rowCount === 0) return sendResponse(res, 404, { message: 'Car not found' });
+                    sendResponse(res, 200, result.rows[0]);
+                } else if (req.method === 'DELETE') {
+                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    const carId = url.searchParams.get('id');
+                    if (!carId) return sendResponse(res, 400, { message: 'Car ID is required' });
+                    
+                    // Check if car has bookings
+                    const bookingsCount = await client.query('SELECT count(*) FROM public.bookings WHERE car_id = $1', [carId]);
+                    if (parseInt(bookingsCount.rows[0].count) > 0) {
+                        return sendResponse(res, 400, { message: 'ไม่สามารถลบรถที่มีประวัติการจองได้ กรุณาเปลี่ยนสถานะเป็น Inactive แทน' });
+                    }
+                    
+                    await client.query('DELETE FROM public.cars WHERE id = $1', [carId]);
+                    sendResponse(res, 200, { message: 'Car deleted successfully' });
                 } else {
                     sendResponse(res, 405, { message: 'Method Not Allowed' });
                 }

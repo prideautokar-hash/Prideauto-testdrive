@@ -1,4 +1,4 @@
-import { Booking, Branch, Unavailability, CarModel } from '../types';
+import { Booking, Branch, Unavailability, CarModel, Car } from '../types';
 import apiClient from './apiClient';
 
 export const login = async (username: string, password: string): Promise<{ token: string; role: string }> => {
@@ -25,8 +25,31 @@ export const getBookings = async (branch: Branch, token: string): Promise<Bookin
   return apiClient<Booking[]>(`bookings?branch=${encodeURIComponent(branch)}`, { token });
 };
 
-export const getCars = async (token: string): Promise<{ id: number; modelName: string; isActive: boolean }[]> => {
-  return apiClient<{ id: number; modelName: string; isActive: boolean }[]>('cars', { token });
+export const getCars = async (token: string): Promise<Car[]> => {
+  return apiClient<Car[]>('cars', { token });
+};
+
+export const addCar = async (carData: Omit<Car, 'id'>, token: string): Promise<Car> => {
+  return apiClient<Car>('cars', {
+    data: carData,
+    token,
+    method: 'POST'
+  });
+};
+
+export const updateCar = async (carData: Car, token: string): Promise<Car> => {
+  return apiClient<Car>('cars', {
+    data: carData,
+    token,
+    method: 'PUT'
+  });
+};
+
+export const deleteCar = async (carId: number, token: string): Promise<void> => {
+  return apiClient<void>(`cars?id=${carId}`, {
+    token,
+    method: 'DELETE'
+  });
 };
 
 export const addBooking = async (

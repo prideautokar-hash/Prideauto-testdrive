@@ -11,8 +11,10 @@ import LoginPage from './components/LoginPage';
 import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars } from './services/apiService';
 import { Logo } from './components/Logo';
 import UnavailableCarsView from './components/UnavailableCarsView';
+import CarManagementView from './components/CarManagementView';
+import { addCar, updateCar, deleteCar } from './services/apiService';
 
-type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable';
+type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable' | 'cars';
 
 const App: React.FC = () => {
     const [authToken, setAuthToken] = useState<string | null>(null);
@@ -164,6 +166,36 @@ const App: React.FC = () => {
         }
     };
 
+    const handleAddCar = async (carData: Omit<Car, 'id'>) => {
+        if (!authToken || !currentBranch) return;
+        try {
+            await addCar(carData, authToken);
+            fetchData(currentBranch, authToken);
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
+    const handleUpdateCar = async (carData: Car) => {
+        if (!authToken || !currentBranch) return;
+        try {
+            await updateCar(carData, authToken);
+            fetchData(currentBranch, authToken);
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
+    const handleDeleteCar = async (id: number) => {
+        if (!authToken || !currentBranch) return;
+        try {
+            await deleteCar(id, authToken);
+            fetchData(currentBranch, authToken);
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
 
     const handleLoginSuccess = (branch: Branch, token: string, role: string) => {
         localStorage.setItem('authToken', token);
@@ -231,6 +263,13 @@ const App: React.FC = () => {
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
                         /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
+            case 'cars':
+                return isAdmin ? <CarManagementView 
+                            cars={cars}
+                            onAddCar={handleAddCar}
+                            onUpdateCar={handleUpdateCar}
+                            onDeleteCar={handleDeleteCar}
+                        /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
             default:
                 return null;
         }
@@ -277,6 +316,7 @@ const App: React.FC = () => {
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     {isAdmin && <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />}
+                    {isAdmin && <DesktopNavItem page="cars" label="จัดการรถ" icon={<WrenchIcon />} />}
                 </nav>
                  <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
                     ออกจากระบบ
@@ -307,6 +347,7 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 {isAdmin && <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />}
+                {isAdmin && <MobileNavItem page="cars" label="จัดการรถ" icon={<WrenchIcon className="w-6 h-6" />} />}
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             
