@@ -39,6 +39,12 @@ const SHORT_CAR_MODEL_NAMES: Record<string, string> = {
 const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, carModels }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
+
+  const carModelToBranch = useMemo(() => {
+    const map = new Map<string, string>();
+    carModels.forEach(c => map.set(c.modelName, c.branch));
+    return map;
+  }, [carModels]);
   
   const bookingsForSelectedDate = useMemo(() => {
     return bookings.filter(b => b.date === selectedDateStringForInput);
@@ -138,7 +144,11 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
                   <tr>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">เวลา</th>
                       {displayCarModels.map(model => (
-                          <th key={model} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{SHORT_CAR_MODEL_NAMES[model] || model}</th>
+                          <th key={model} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                              {SHORT_CAR_MODEL_NAMES[model] || model}
+                              <br />
+                              <span className="text-[10px] font-normal lowercase">({carModelToBranch.get(model)})</span>
+                          </th>
                       ))}
                   </tr>
               </thead>

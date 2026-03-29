@@ -158,7 +158,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
                   <div className="flex items-center justify-between gap-4">
                       <div>
                           <p className="font-semibold text-gray-800">{booking.timeSlot} - <span className="text-gray-500 font-medium">ลูกค้า:</span> {booking.customerName}</p>
-                          <p className="text-sm text-gray-600">{booking.carModel}</p>
+                          <p className="text-sm text-gray-600">{booking.carModel} ({booking.branch})</p>
                       </div>
                       <div className="text-right flex-shrink-0 flex items-center gap-2">
                           <div>

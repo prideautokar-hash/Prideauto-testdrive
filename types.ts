@@ -23,6 +23,7 @@ export interface Car {
   id: number;
   modelName: string;
   isActive: boolean;
+  branch: Branch;
 }
 
 export interface Booking {
@@ -33,6 +34,7 @@ export interface Booking {
   timeSlot: string; // HH:mm
   carModel: CarModel;
   carId: number; // Added for mapping
+  carBranch: string; // Added for car affiliation
   notes?: string;
   salesperson: string;
   branch: Branch;
@@ -42,6 +44,7 @@ export interface Unavailability {
     id: number;
     carModel: CarModel;
     carId: number;
+    carBranch: string;
     date: string; // YYYY-MM-DD
     startTime: string; // HH:mm
     endTime: string; // HH:mm

@@ -200,8 +200,8 @@ const App: React.FC = () => {
         }
     };
 
-    const activeCarModels = useMemo(() => {
-        return cars.filter(c => c.isActive).map(c => c.modelName as CarModel);
+    const activeCars = useMemo(() => {
+        return cars.filter(c => c.isActive);
     }, [cars]);
 
     const renderPage = () => {
@@ -227,7 +227,7 @@ const App: React.FC = () => {
                             unavailability={unavailability} 
                             selectedDate={selectedDate} 
                             setSelectedDate={setSelectedDate} 
-                            carModels={activeCarModels}
+                            carModels={activeCars}
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
                         /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
@@ -318,7 +318,7 @@ const App: React.FC = () => {
                 bookings={bookings}
                 unavailability={unavailability}
                 canSave={isAdmin}
-                carModels={activeCarModels}
+                carModels={activeCars}
             />
         </div>
     );

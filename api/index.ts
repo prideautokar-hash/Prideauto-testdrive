@@ -151,7 +151,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
             const client = await pool.connect();
             try {
                 if (req.method === 'GET') {
-                    const result = await client.query('SELECT id, model_name as "modelName", is_active as "isActive" FROM public.cars ORDER BY model_name');
+                    const result = await client.query('SELECT id, model_name as "modelName", is_active as "isActive", branch FROM public.cars ORDER BY model_name');
                     sendResponse(res, 200, result.rows);
                 } else {
                     sendResponse(res, 405, { message: 'Method Not Allowed' });
@@ -186,6 +186,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                             to_char(b.booking_time, 'HH24:MI') as "timeSlot",
                             cr.model_name as "carModel",
                             cr.id as "carId",
+                            cr.branch as "carBranch",
                             b.notes,
                             s.name as "salesperson",
                             br.name as "branch"
@@ -279,7 +280,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     if (!branch) return sendResponse(res, 400, { message: 'Branch is required' });
                     
                     const result = await client.query(`
-                        SELECT u.id, c.model_name as "carModel", c.id as "carId", u.unavailability_date as "date", 
+                        SELECT u.id, c.model_name as "carModel", c.id as "carId", c.branch as "carBranch", u.unavailability_date as "date", 
                                to_char(u.start_time, 'HH24:MI') as "startTime", 
                                to_char(u.end_time, 'HH24:MI') as "endTime", u.reason
                         FROM public.car_unavailability u

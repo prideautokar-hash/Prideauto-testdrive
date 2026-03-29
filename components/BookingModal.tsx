@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Booking, CarModel, Unavailability } from '../types';
+import { Booking, CarModel, Unavailability, Car } from '../types';
 import { CAR_MODELS, TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
 
 interface BookingModalProps {
@@ -10,7 +10,7 @@ interface BookingModalProps {
   bookings: Booking[];
   unavailability: Unavailability[];
   canSave: boolean;
-  carModels: CarModel[];
+  carModels: Car[];
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability, canSave, carModels }) => {
@@ -18,11 +18,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
   const [phoneNumber, setPhoneNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState(TIME_SLOTS[0]);
-  const [carModel, setCarModel] = useState<CarModel>(carModels[0] || CAR_MODELS[0]);
+  const [carModel, setCarModel] = useState<CarModel>(carModels[0]?.modelName as CarModel || CAR_MODELS[0]);
   const [notes, setNotes] = useState('');
   const [salesperson, setSalesperson] = useState('');
   const [error, setError] = useState('');
-  const [availableCarModels, setAvailableCarModels] = useState<CarModel[]>(carModels);
+  const [availableCarModels, setAvailableCarModels] = useState<Car[]>(carModels);
 
   // Effect to initialize form state when modal opens
   useEffect(() => {
@@ -55,15 +55,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     );
 
     const availableModels = carModels.filter(m => 
-        !bookedCarModelsInSlot.has(m) && !unavailableCarModelsInSlot.has(m)
+        !bookedCarModelsInSlot.has(m.modelName as CarModel) && !unavailableCarModelsInSlot.has(m.modelName as CarModel)
     );
     
     setAvailableCarModels(availableModels);
     
     // If the previously selected car model is no longer available,
     // switch to the first available one. Otherwise, keep the selection.
-    if (!availableModels.includes(carModel)) {
-      setCarModel(availableModels[0] || carModels[0] || CAR_MODELS[0]);
+    if (!availableModels.some(m => m.modelName === carModel)) {
+      setCarModel(availableModels[0]?.modelName as CarModel || carModels[0]?.modelName as CarModel || CAR_MODELS[0]);
     }
   }, [isOpen, date, timeSlot, bookings, unavailability, carModels]);
 
@@ -142,7 +142,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
               <label className="block text-sm font-medium text-gray-700">รุ่นรถ*</label>
               {availableCarModels.length > 0 ? (
                 <select value={carModel} onChange={e => setCarModel(e.target.value as CarModel)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
-                    {availableCarModels.map(model => <option key={model} value={model}>{model}</option>)}
+                    {availableCarModels.map(car => (
+                      <option key={car.id} value={car.modelName}>
+                        {car.modelName} ({car.branch})
+                      </option>
+                    ))}
                 </select>
               ) : (
                 <div className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2 text-gray-500">

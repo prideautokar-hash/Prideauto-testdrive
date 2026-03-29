@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Booking, CarModel, Unavailability } from '../types';
+import { Booking, CarModel, Unavailability, Car } from '../types';
 import { TrashIcon } from './icons';
 import { TIME_SLOTS } from '../constants';
 
@@ -8,7 +8,7 @@ interface UnavailableCarsViewProps {
     unavailability: Unavailability[];
     selectedDate: Date;
     setSelectedDate: (date: Date) => void;
-    carModels: CarModel[];
+    carModels: Car[];
     onAddUnavailability: (carModel: CarModel, date: string, period: string, reason: string) => Promise<void>;
     onDeleteUnavailability: (id: number) => void;
 }
@@ -42,7 +42,7 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     onAddUnavailability,
     onDeleteUnavailability
 }) => {
-    const [selectedCarModel, setSelectedCarModel] = useState<CarModel>(carModels[0] || '' as CarModel);
+    const [selectedCarModel, setSelectedCarModel] = useState<CarModel>(carModels[0]?.modelName as CarModel || '' as CarModel);
     const [period, setPeriod] = useState<string>('morning');
     const [selectedSlot, setSelectedSlot] = useState<string>(TIME_SLOTS[0]);
     const [reason, setReason] = useState('');
@@ -50,8 +50,8 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
-        if (carModels.length > 0 && (!selectedCarModel || !carModels.includes(selectedCarModel))) {
-            setSelectedCarModel(carModels[0]);
+        if (carModels.length > 0 && (!selectedCarModel || !carModels.some(m => m.modelName === selectedCarModel))) {
+            setSelectedCarModel(carModels[0].modelName as CarModel);
         }
     }, [carModels]);
 
@@ -149,7 +149,11 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">รุ่นรถ</label>
                                 <select value={selectedCarModel} onChange={e => setSelectedCarModel(e.target.value as CarModel)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
-                                    {carModels.map(model => <option key={model} value={model}>{model}</option>)}
+                                    {carModels.map(car => (
+                                        <option key={car.id} value={car.modelName}>
+                                            {car.modelName} ({car.branch})
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
