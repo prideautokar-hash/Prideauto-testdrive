@@ -19,6 +19,12 @@ export enum Branch {
   KALASIN = 'กาฬสินธุ์',
 }
 
+export interface Car {
+  id: number;
+  modelName: string;
+  isActive: boolean;
+}
+
 export interface Booking {
   id: string;
   customerName: string;

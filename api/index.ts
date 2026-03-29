@@ -143,6 +143,26 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 sendResponse(res, 405, { message: 'Method Not Allowed' });
             }
         }
+        // --- CARS ENDPOINT ---
+        else if (url.pathname.endsWith('/cars')) {
+            const userData = verifyToken(req);
+            if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+
+            const client = await pool.connect();
+            try {
+                if (req.method === 'GET') {
+                    const result = await client.query('SELECT id, model_name as "modelName", is_active as "isActive" FROM public.cars ORDER BY model_name');
+                    sendResponse(res, 200, result.rows);
+                } else {
+                    sendResponse(res, 405, { message: 'Method Not Allowed' });
+                }
+            } catch (err) {
+                console.error('Cars DB Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
         // --- BOOKINGS ENDPOINT ---
         else if (url.pathname.endsWith('/bookings')) {
              const userData = verifyToken(req);

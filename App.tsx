@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Booking, Branch, Unavailability, CarModel } from './types';
+import { Booking, Branch, Unavailability, CarModel, Car } from './types';
 import { CAR_MODELS, AVAILABLE_CAR_MODELS } from './constants';
 import CalendarView from './components/CalendarView';
 import SlotView from './components/SlotView';
@@ -8,7 +8,7 @@ import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability } from './services/apiService';
+import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars } from './services/apiService';
 import { Logo } from './components/Logo';
 import UnavailableCarsView from './components/UnavailableCarsView';
 
@@ -21,6 +21,7 @@ const App: React.FC = () => {
     
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [unavailability, setUnavailability] = useState<Unavailability[]>([]);
+    const [cars, setCars] = useState<Car[]>([]);
     
     const [currentPage, setCurrentPage] = useState<Page>('calendar');
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -37,12 +38,14 @@ const App: React.FC = () => {
             const results = await Promise.allSettled([
                 getBookings(branch, token),
                 getUnavailability(branch, token),
-                getAppSetting('app_logo', token)
+                getAppSetting('app_logo', token),
+                getCars(token)
             ]);
 
             const bookingsResult = results[0];
             const unavailabilityResult = results[1];
             const appLogoResult = results[2];
+            const carsResult = results[3];
 
             if (bookingsResult.status === 'fulfilled') {
                 setBookings(bookingsResult.value);
@@ -63,6 +66,12 @@ const App: React.FC = () => {
             } else {
                  console.warn("App logo not found or couldn't be fetched.", appLogoResult.reason);
                  setAppLogo(null);
+            }
+
+            if (carsResult.status === 'fulfilled') {
+                setCars(carsResult.value);
+            } else {
+                console.error('Failed to fetch cars:', carsResult.reason);
             }
 
         } catch (err) {
@@ -191,6 +200,10 @@ const App: React.FC = () => {
         }
     };
 
+    const activeCarModels = useMemo(() => {
+        return cars.filter(c => c.isActive).map(c => c.modelName as CarModel);
+    }, [cars]);
+
     const renderPage = () => {
         if (isLoading) {
             return <div className="p-10 text-center text-gray-500">กำลังโหลดข้อมูล...</div>;
@@ -203,9 +216,9 @@ const App: React.FC = () => {
             case 'calendar':
                 return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} />;
             case 'slots':
-                return <SlotView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} />;
+                return <SlotView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} carModels={cars} />;
             case 'usage':
-                return <CarUsageView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} />;
+                return <CarUsageView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} carModels={cars} />;
             case 'dashboard':
                 return <DashboardView bookings={bookings} authToken={authToken!} />;
             case 'unavailable':
@@ -214,7 +227,7 @@ const App: React.FC = () => {
                             unavailability={unavailability} 
                             selectedDate={selectedDate} 
                             setSelectedDate={setSelectedDate} 
-                            carModels={AVAILABLE_CAR_MODELS}
+                            carModels={activeCarModels}
                             onAddUnavailability={handleAddUnavailability}
                             onDeleteUnavailability={handleDeleteUnavailability}
                         /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
@@ -305,6 +318,7 @@ const App: React.FC = () => {
                 bookings={bookings}
                 unavailability={unavailability}
                 canSave={isAdmin}
+                carModels={activeCarModels}
             />
         </div>
     );

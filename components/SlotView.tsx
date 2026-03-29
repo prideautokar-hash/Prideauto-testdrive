@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Booking, Unavailability } from '../types';
-import { TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
+import { Booking, Unavailability, Car } from '../types';
+import { TIME_SLOTS } from '../constants';
 import { TrashIcon } from './icons';
 
 interface SlotViewProps {
@@ -12,6 +12,7 @@ interface SlotViewProps {
   onDeleteBooking: (bookingId: string) => void;
   canDelete: boolean;
   canAdd: boolean;
+  carModels: Car[];
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -24,9 +25,11 @@ const toYYYYMMDD = (date: Date) => {
 };
 
 
-const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd }) => {
+const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd, carModels }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
+
+  const activeCarModels = useMemo(() => carModels.filter(c => c.isActive).map(c => c.modelName), [carModels]);
 
   const bookingsForSelectedDate = useMemo(() => {
     return bookings
@@ -111,7 +114,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
             
             const bookedCarModels = new Set(slotBookings.map(b => b.carModel));
             const unavailableCarModels = new Set(slotUnavailability.map(u => u.carModel));
-            const availableCarModels = AVAILABLE_CAR_MODELS.filter(m => !bookedCarModels.has(m) && !unavailableCarModels.has(m));
+            const availableCarModels = activeCarModels.filter(m => !bookedCarModels.has(m) && !unavailableCarModels.has(m));
             
             const hasBookings = slotBookings.length > 0;
 
@@ -151,7 +154,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                             </>
                         ) : (
                              availableCarModels.length > 0 ? (
-                                canAdd ? (
+                                 canAdd ? (
                                     <button
                                         className="w-full text-center py-4 rounded-md bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
                                         onClick={() => openBookingModal({ date: selectedDateStringForInput, timeSlot: slot })}

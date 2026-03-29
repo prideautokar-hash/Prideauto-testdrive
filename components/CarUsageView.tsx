@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Booking, CarModel, Unavailability } from '../types';
-import { TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
+import { Booking, CarModel, Unavailability, Car } from '../types';
+import { TIME_SLOTS } from '../constants';
 import { CheckIcon, XIcon } from './icons';
 
 interface CarUsageViewProps {
@@ -8,6 +8,7 @@ interface CarUsageViewProps {
   unavailability: Unavailability[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
+  carModels: Car[];
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -19,24 +20,23 @@ const toYYYYMMDD = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
-const SHORT_CAR_MODEL_NAMES: Record<CarModel, string> = {
-  [CarModel.SEAL_DYN]: 'Seal Dyn',
-  [CarModel.SEAL_PERF]: 'Seal Perf',
-  [CarModel.ATTO3]: 'Atto 3',
-  [CarModel.DOLPHIN]: 'Dolphin',
-  [CarModel.SEALION6]: 'Sealion 6',
-  [CarModel.SEALION7]: 'Sealion 7',
-  [CarModel.SEAL5]: 'Seal 5 PRE',
-  [CarModel.M6]: 'M6',
-  [CarModel.ATTO1]: 'Atto 1',
-  [CarModel.ATTO2]: 'Atto 2',
-  [CarModel.SEAL6]: 'Seal 6',
-  [CarModel.SEALION5]: 'Sealion 5',
-  [CarModel.SEAL5_STD]: 'Seal 5 Std',
+const SHORT_CAR_MODEL_NAMES: Record<string, string> = {
+  'BYD Seal Dynamic': 'Seal Dyn',
+  'BYD Seal Performance': 'Seal Perf',
+  'BYD Atto 3': 'Atto 3',
+  'BYD Dolphin': 'Dolphin',
+  'BYD Sealion 6 DM-i': 'Sealion 6',
+  'BYD Sealion 7': 'Sealion 7',
+  'BYD Seal 5 DM-i Premium': 'Seal 5 PRE',
+  'BYD M6': 'M6',
+  'BYD Atto1': 'Atto 1',
+  'BYD Atto2': 'Atto 2',
+  'BYD Seal 6': 'Seal 6',
+  'BYD Sealion 5 DM-i': 'Sealion 5',
+  'BYD Seal 5 DM-i Standard': 'Seal 5 Std',
 };
 
-
-const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate }) => {
+const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, selectedDate, setSelectedDate, carModels }) => {
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
   
@@ -48,6 +48,18 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     return unavailability.filter(u => u.date === selectedDateStringForInput);
   }, [unavailability, selectedDateStringForInput]);
   
+  const displayCarModels = useMemo(() => {
+    const activeModels = carModels.filter(c => c.isActive).map(c => c.modelName as CarModel);
+    const bookedModels = new Set(bookingsForSelectedDate.map(b => b.carModel));
+    const unavailableModels = new Set(unavailabilityForSelectedDate.map(u => u.carModel));
+    
+    const inactiveModelsWithData = carModels
+        .filter(c => !c.isActive && (bookedModels.has(c.modelName as CarModel) || unavailableModels.has(c.modelName as CarModel)))
+        .map(c => c.modelName as CarModel);
+        
+    return [...activeModels, ...inactiveModelsWithData];
+  }, [carModels, bookingsForSelectedDate, unavailabilityForSelectedDate]);
+
   type GridCell = { type: 'booking', data: Booking } | { type: 'unavailable', data: Unavailability } | null;
 
   const usageGrid = useMemo(() => {
@@ -55,7 +67,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     
     TIME_SLOTS.forEach(slot => {
       const slotMap = new Map<CarModel, GridCell>();
-      AVAILABLE_CAR_MODELS.forEach(model => slotMap.set(model, null));
+      displayCarModels.forEach(model => slotMap.set(model, null));
       grid.set(slot, slotMap);
     });
 
@@ -76,11 +88,11 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     });
     
     return grid;
-  }, [bookingsForSelectedDate, unavailabilityForSelectedDate]);
+  }, [bookingsForSelectedDate, unavailabilityForSelectedDate, displayCarModels]);
   
   const carUsageStatus = useMemo(() => {
     const statusMap = new Map<CarModel, boolean>();
-    AVAILABLE_CAR_MODELS.forEach(model => statusMap.set(model, false));
+    displayCarModels.forEach(model => statusMap.set(model, false));
     
     bookingsForSelectedDate.forEach(booking => {
         statusMap.set(booking.carModel, true);
@@ -91,7 +103,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     });
 
     return statusMap;
-  }, [bookingsForSelectedDate, unavailabilityForSelectedDate]);
+  }, [bookingsForSelectedDate, unavailabilityForSelectedDate, displayCarModels]);
 
   const thaiDateFormat = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',
@@ -125,15 +137,15 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
               <thead className="bg-gray-50">
                   <tr>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">เวลา</th>
-                      {AVAILABLE_CAR_MODELS.map(model => (
-                          <th key={model} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{SHORT_CAR_MODEL_NAMES[model]}</th>
+                      {displayCarModels.map(model => (
+                          <th key={model} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{SHORT_CAR_MODEL_NAMES[model] || model}</th>
                       ))}
                   </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                   <tr className="font-semibold text-xs">
                         <td className="px-2 py-2 sticky left-0 bg-gray-50 z-10 text-gray-600 uppercase">สถานะ</td>
-                        {AVAILABLE_CAR_MODELS.map(model => {
+                        {displayCarModels.map(model => {
                             const isUsed = carUsageStatus.get(model);
                             return (
                                 <td key={`status-${model}`} className={`px-2 py-2 text-center ${isUsed ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>

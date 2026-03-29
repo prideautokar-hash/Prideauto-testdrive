@@ -25,6 +25,10 @@ export const getBookings = async (branch: Branch, token: string): Promise<Bookin
   return apiClient<Booking[]>(`bookings?branch=${encodeURIComponent(branch)}`, { token });
 };
 
+export const getCars = async (token: string): Promise<{ id: number; modelName: string; isActive: boolean }[]> => {
+  return apiClient<{ id: number; modelName: string; isActive: boolean }[]>('cars', { token });
+};
+
 export const addBooking = async (
   bookingData: Omit<Booking, 'id' | 'branch' | 'carId'>,
   branch: Branch,

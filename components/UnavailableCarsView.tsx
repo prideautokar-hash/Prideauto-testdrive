@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Booking, CarModel, Unavailability } from '../types';
 import { TrashIcon } from './icons';
 import { TIME_SLOTS } from '../constants';
@@ -42,12 +42,18 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     onAddUnavailability,
     onDeleteUnavailability
 }) => {
-    const [selectedCarModel, setSelectedCarModel] = useState<CarModel>(carModels[0]);
+    const [selectedCarModel, setSelectedCarModel] = useState<CarModel>(carModels[0] || '' as CarModel);
     const [period, setPeriod] = useState<string>('morning');
     const [selectedSlot, setSelectedSlot] = useState<string>(TIME_SLOTS[0]);
     const [reason, setReason] = useState('');
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+
+    useEffect(() => {
+        if (carModels.length > 0 && (!selectedCarModel || !carModels.includes(selectedCarModel))) {
+            setSelectedCarModel(carModels[0]);
+        }
+    }, [carModels]);
 
     const selectedDateString = toYYYYMMDD(selectedDate);
     const todayString = toYYYYMMDD(new Date());
