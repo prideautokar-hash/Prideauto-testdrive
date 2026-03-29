@@ -151,12 +151,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">หมายเหตุ</label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+              <label className="block text-sm font-medium text-gray-700">ชื่อเซลส์*</label>
+              <input type="text" value={salesperson} onChange={e => setSalesperson(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">ชื่อเซลล์*</label>
-              <input type="text" value={salesperson} onChange={e => setSalesperson(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+              <label className="block text-sm font-medium text-gray-700">หมายเหตุ</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div className="flex justify-end space-x-3 pt-4">
               <button type="button" onClick={handleClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">ยกเลิก</button>

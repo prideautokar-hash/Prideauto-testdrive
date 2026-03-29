@@ -162,7 +162,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
                       </div>
                       <div className="text-right flex-shrink-0 flex items-center gap-2">
                           <div>
-                            <p className="text-sm text-gray-500">เซลล์</p>
+                            <p className="text-sm text-gray-500">เซลส์</p>
                             <p className="text-sm font-medium text-gray-800">{booking.salesperson}</p>
                           </div>
                           {canDelete && (

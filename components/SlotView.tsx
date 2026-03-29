@@ -132,7 +132,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                                        <li key={booking.id} className="text-sm group relative bg-red-100 p-2 rounded">
                                            <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
                                            <p className="text-gray-700">{booking.carModel}</p>
-                                           <p className="text-xs text-gray-500 mt-1">เซลล์: {booking.salesperson}</p>
+                                           <p className="text-xs text-gray-500 mt-1">เซลส์: {booking.salesperson}</p>
                                            {canDelete && (
                                              <button
                                                 onClick={(e) => {

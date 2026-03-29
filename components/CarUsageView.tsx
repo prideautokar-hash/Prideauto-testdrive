@@ -165,7 +165,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
                                           <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
                                               <p className="font-bold">ลูกค้า: {cellData.data.customerName}</p>
                                               <p>{cellData.data.phoneNumber}</p>
-                                              <p>เซลล์: {cellData.data.salesperson}</p>
+                                              <p>เซลส์: {cellData.data.salesperson}</p>
                                               {cellData.data.notes && <p>หมายเหตุ: {cellData.data.notes}</p>}
                                           </div>
                                       </div>
