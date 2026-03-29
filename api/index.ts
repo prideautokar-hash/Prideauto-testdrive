@@ -297,6 +297,13 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         startTime = '13:00'; endTime = '17:00';
                     } else if (period === 'all-day') {
                         startTime = '08:00'; endTime = '17:00';
+                    } else if (/^\d{2}:\d{2}$/.test(period)) {
+                        startTime = period;
+                        // Calculate end time (30 minutes later)
+                        const [h, m] = period.split(':').map(Number);
+                        const d = new Date();
+                        d.setHours(h, m + 30, 0, 0);
+                        endTime = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                     } else {
                         return sendResponse(res, 400, { message: 'Invalid period specified.' });
                     }

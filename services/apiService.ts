@@ -52,7 +52,7 @@ export const getUnavailability = async (branch: Branch, token: string): Promise<
 };
 
 export const addUnavailability = async (
-    data: { carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string, branch: Branch },
+    data: { carModel: CarModel, date: string, period: string, reason: string, branch: Branch },
     token: string
 ): Promise<Unavailability> => {
     return apiClient<Unavailability>('unavailability', {

@@ -130,7 +130,7 @@ const App: React.FC = () => {
         }
     };
 
-    const handleAddUnavailability = async (carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string) => {
+    const handleAddUnavailability = async (carModel: CarModel, date: string, period: string, reason: string) => {
         if (!currentBranch || !authToken) {
             throw new Error("Authentication error. Please log in again.");
         }

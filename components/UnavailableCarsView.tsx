@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Booking, CarModel, Unavailability } from '../types';
 import { TrashIcon } from './icons';
+import { TIME_SLOTS } from '../constants';
 
 interface UnavailableCarsViewProps {
     bookings: Booking[];
@@ -8,7 +9,7 @@ interface UnavailableCarsViewProps {
     selectedDate: Date;
     setSelectedDate: (date: Date) => void;
     carModels: CarModel[];
-    onAddUnavailability: (carModel: CarModel, date: string, period: 'morning' | 'afternoon' | 'all-day', reason: string) => Promise<void>;
+    onAddUnavailability: (carModel: CarModel, date: string, period: string, reason: string) => Promise<void>;
     onDeleteUnavailability: (id: number) => void;
 }
 
@@ -42,7 +43,8 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     onDeleteUnavailability
 }) => {
     const [selectedCarModel, setSelectedCarModel] = useState<CarModel>(carModels[0]);
-    const [period, setPeriod] = useState<'morning' | 'afternoon' | 'all-day'>('morning');
+    const [period, setPeriod] = useState<string>('morning');
+    const [selectedSlot, setSelectedSlot] = useState<string>(TIME_SLOTS[0]);
     const [reason, setReason] = useState('');
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -75,8 +77,15 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
             startTime = '08:00'; endTime = '13:00';
         } else if (period === 'afternoon') {
             startTime = '13:00'; endTime = '17:00';
-        } else { // all-day
+        } else if (period === 'all-day') {
             startTime = '08:00'; endTime = '17:00';
+        } else {
+            // Custom slot
+            startTime = selectedSlot;
+            const [h, m] = selectedSlot.split(':').map(Number);
+            const d = new Date();
+            d.setHours(h, m + 30, 0, 0);
+            endTime = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
         }
 
         const conflictingBooking = bookings.find(booking =>
@@ -93,7 +102,8 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
         // --- End of Conflict Check ---
 
         try {
-            await onAddUnavailability(selectedCarModel, selectedDateString, period, reason);
+            const finalPeriod = period === 'custom-slot' ? selectedSlot : period;
+            await onAddUnavailability(selectedCarModel, selectedDateString, finalPeriod, reason);
             setSuccessMessage('การบันทึกสำเร็จแล้ว');
             setReason(''); // Reset form on success
             setTimeout(() => setSuccessMessage(''), 3000); // Clear message after 3 seconds
@@ -138,12 +148,27 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">ช่วงเวลา</label>
-                                <select value={period} onChange={e => setPeriod(e.target.value as any)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                                <select value={period} onChange={e => setPeriod(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="morning">ครึ่งเช้า (08:00 - 13:00)</option>
                                     <option value="afternoon">ครึ่งบ่าย (13:00 - 17:00)</option>
                                     <option value="all-day">ทั้งวัน (08:00 - 17:00)</option>
+                                    <option value="custom-slot">ระบุตามช่วงเวลา (Slot)</option>
                                 </select>
                             </div>
+                            {period === 'custom-slot' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">เลือก Slot เวลา (30 นาที)</label>
+                                    <select 
+                                        value={selectedSlot} 
+                                        onChange={e => setSelectedSlot(e.target.value)} 
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        {TIME_SLOTS.map(slot => (
+                                            <option key={slot} value={slot}>{slot}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">เหตุผล (ถ้ามี)</label>
                                 <input type="text" value={reason} onChange={e => setReason(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
