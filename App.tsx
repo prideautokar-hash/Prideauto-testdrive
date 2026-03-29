@@ -8,7 +8,7 @@ import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon, SettingsIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars } from './services/apiService';
+import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars, getBranches } from './services/apiService';
 import { Logo } from './components/Logo';
 import UnavailableCarsView from './components/UnavailableCarsView';
 import CarManagementView from './components/CarManagementView';
@@ -24,6 +24,7 @@ const App: React.FC = () => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [unavailability, setUnavailability] = useState<Unavailability[]>([]);
     const [cars, setCars] = useState<Car[]>([]);
+    const [branches, setBranches] = useState<{ id: number; name: string }[]>([]);
     
     const [currentPage, setCurrentPage] = useState<Page>('calendar');
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -41,13 +42,15 @@ const App: React.FC = () => {
                 getBookings(branch, token),
                 getUnavailability(branch, token),
                 getAppSetting('app_logo', token),
-                getCars(token)
+                getCars(token),
+                getBranches(token)
             ]);
 
             const bookingsResult = results[0];
             const unavailabilityResult = results[1];
             const appLogoResult = results[2];
             const carsResult = results[3];
+            const branchesResult = results[4];
 
             if (bookingsResult.status === 'fulfilled') {
                 setBookings(bookingsResult.value);
@@ -74,6 +77,12 @@ const App: React.FC = () => {
                 setCars(carsResult.value);
             } else {
                 console.error('Failed to fetch cars:', carsResult.reason);
+            }
+
+            if (branchesResult.status === 'fulfilled') {
+                setBranches(branchesResult.value);
+            } else {
+                console.error('Failed to fetch branches:', branchesResult.reason);
             }
 
         } catch (err) {
@@ -266,6 +275,7 @@ const App: React.FC = () => {
             case 'cars':
                 return isAdmin ? <CarManagementView 
                             cars={cars}
+                            branches={branches}
                             onAddCar={handleAddCar}
                             onUpdateCar={handleUpdateCar}
                             onDeleteCar={handleDeleteCar}

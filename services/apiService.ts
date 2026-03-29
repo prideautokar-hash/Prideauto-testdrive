@@ -29,6 +29,10 @@ export const getCars = async (token: string): Promise<Car[]> => {
   return apiClient<Car[]>('cars', { token });
 };
 
+export const getBranches = async (token: string): Promise<{ id: number; name: string }[]> => {
+  return apiClient<{ id: number; name: string }[]>('branches', { token });
+};
+
 export const addCar = async (carData: Omit<Car, 'id'>, token: string): Promise<Car> => {
   return apiClient<Car>('cars', {
     data: carData,

@@ -298,6 +298,26 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 client.release();
             }
         }
+        // --- BRANCHES ENDPOINT ---
+        else if (url.pathname.endsWith('/branches')) {
+            const userData = verifyToken(req);
+            if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+
+            const client = await pool.connect();
+            try {
+                if (req.method === 'GET') {
+                    const result = await client.query('SELECT id, name FROM public.branches ORDER BY name');
+                    sendResponse(res, 200, result.rows);
+                } else {
+                    sendResponse(res, 405, { message: 'Method Not Allowed' });
+                }
+            } catch (err) {
+                console.error('Branches DB Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
         // --- UNAVAILABILITY ENDPOINT ---
         else if (url.pathname.endsWith('/unavailability')) {
             const userData = verifyToken(req);

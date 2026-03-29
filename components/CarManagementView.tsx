@@ -4,17 +4,18 @@ import { TrashIcon, WrenchIcon } from './icons';
 
 interface CarManagementViewProps {
     cars: Car[];
+    branches: { id: number; name: string }[];
     onAddCar: (car: Omit<Car, 'id'>) => Promise<void>;
     onUpdateCar: (car: Car) => Promise<void>;
     onDeleteCar: (id: number) => Promise<void>;
 }
 
-const CarManagementView: React.FC<CarManagementViewProps> = ({ cars, onAddCar, onUpdateCar, onDeleteCar }) => {
+const CarManagementView: React.FC<CarManagementViewProps> = ({ cars, branches, onAddCar, onUpdateCar, onDeleteCar }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [editingCar, setEditingCar] = useState<Car | null>(null);
     
     const [modelName, setModelName] = useState('');
-    const [branch, setBranch] = useState<Branch>(Branch.MAHASARAKHAM);
+    const [branch, setBranch] = useState<string>('');
     const [isActive, setIsActive] = useState(true);
     
     const [error, setError] = useState('');
@@ -22,7 +23,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({ cars, onAddCar, o
 
     const resetForm = () => {
         setModelName('');
-        setBranch(Branch.MAHASARAKHAM);
+        setBranch(branches.length > 0 ? branches[0].name : '');
         setIsActive(true);
         setIsAdding(false);
         setEditingCar(null);
@@ -35,6 +36,13 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({ cars, onAddCar, o
         setBranch(car.branch);
         setIsActive(car.isActive);
         setIsAdding(true);
+    };
+
+    const handleStartAdding = () => {
+        setIsAdding(true);
+        if (branches.length > 0) {
+            setBranch(branches[0].name);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -80,7 +88,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({ cars, onAddCar, o
                 </div>
                 {!isAdding && (
                     <button 
-                        onClick={() => setIsAdding(true)}
+                        onClick={handleStartAdding}
                         style={{ backgroundColor: '#7D9AB9' }}
                         className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm"
                     >
@@ -109,11 +117,12 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({ cars, onAddCar, o
                                 <label className="block text-sm font-medium text-gray-700">สังกัดสาขา*</label>
                                 <select 
                                     value={branch} 
-                                    onChange={e => setBranch(e.target.value as Branch)}
+                                    onChange={e => setBranch(e.target.value)}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                                 >
-                                    <option value={Branch.MAHASARAKHAM}>{Branch.MAHASARAKHAM}</option>
-                                    <option value={Branch.KALASIN}>{Branch.KALASIN}</option>
+                                    {branches.map(b => (
+                                        <option key={b.id} value={b.name}>{b.name}</option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
