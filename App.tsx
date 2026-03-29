@@ -6,7 +6,7 @@ import SlotView from './components/SlotView';
 import CarUsageView from './components/CarUsageView';
 import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
-import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon } from './components/icons';
+import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon, SettingsIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
 import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars } from './services/apiService';
 import { Logo } from './components/Logo';
@@ -316,7 +316,7 @@ const App: React.FC = () => {
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
                     <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     {isAdmin && <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />}
-                    {isAdmin && <DesktopNavItem page="cars" label="จัดการรถ" icon={<WrenchIcon />} />}
+                    {isAdmin && <DesktopNavItem page="cars" label="Setting" icon={<SettingsIcon />} />}
                 </nav>
                  <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
                     ออกจากระบบ
@@ -347,7 +347,7 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 {isAdmin && <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />}
-                {isAdmin && <MobileNavItem page="cars" label="จัดการรถ" icon={<WrenchIcon className="w-6 h-6" />} />}
+                {isAdmin && <MobileNavItem page="cars" label="Setting" icon={<SettingsIcon className="w-6 h-6" />} />}
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
             </nav>
             
