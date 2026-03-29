@@ -151,23 +151,41 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
             const client = await pool.connect();
             try {
                 if (req.method === 'GET') {
-                    const result = await client.query('SELECT id, model_name as "modelName", is_active as "isActive", branch FROM public.cars ORDER BY model_name');
+                    const result = await client.query(`
+                        SELECT c.id, c.model_name as "modelName", c.is_active as "isActive", c.branch_id as "branchId", b.name as "branch"
+                        FROM public.cars c
+                        LEFT JOIN public.branches b ON c.branch_id = b.id
+                        ORDER BY c.model_name
+                    `);
                     sendResponse(res, 200, result.rows);
                 } else if (req.method === 'POST') {
                     if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
-                    const { modelName, branch, isActive } = await parseJSONBody(req);
-                    const result = await client.query(
-                        'INSERT INTO public.cars (model_name, branch, is_active) VALUES ($1, $2, $3) RETURNING id, model_name as "modelName", is_active as "isActive", branch',
-                        [modelName, branch, isActive !== undefined ? isActive : true]
-                    );
+                    const { modelName, branchId, isActive } = await parseJSONBody(req);
+                    const result = await client.query(`
+                        WITH inserted AS (
+                            INSERT INTO public.cars (model_name, branch_id, is_active) 
+                            VALUES ($1, $2, $3) 
+                            RETURNING id, model_name as "modelName", is_active as "isActive", branch_id as "branchId"
+                        )
+                        SELECT i.*, b.name as "branch"
+                        FROM inserted i
+                        LEFT JOIN public.branches b ON i."branchId" = b.id
+                    `, [modelName, branchId, isActive !== undefined ? isActive : true]);
                     sendResponse(res, 201, result.rows[0]);
                 } else if (req.method === 'PUT') {
                     if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
-                    const { id, modelName, branch, isActive } = await parseJSONBody(req);
-                    const result = await client.query(
-                        'UPDATE public.cars SET model_name = $1, branch = $2, is_active = $3 WHERE id = $4 RETURNING id, model_name as "modelName", is_active as "isActive", branch',
-                        [modelName, branch, isActive, id]
-                    );
+                    const { id, modelName, branchId, isActive } = await parseJSONBody(req);
+                    const result = await client.query(`
+                        WITH updated AS (
+                            UPDATE public.cars 
+                            SET model_name = $1, branch_id = $2, is_active = $3 
+                            WHERE id = $4 
+                            RETURNING id, model_name as "modelName", is_active as "isActive", branch_id as "branchId"
+                        )
+                        SELECT u.*, b.name as "branch"
+                        FROM updated u
+                        LEFT JOIN public.branches b ON u."branchId" = b.id
+                    `, [modelName, branchId, isActive, id]);
                     if (result.rowCount === 0) return sendResponse(res, 404, { message: 'Car not found' });
                     sendResponse(res, 200, result.rows[0]);
                 } else if (req.method === 'DELETE') {
@@ -216,13 +234,14 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                             to_char(b.booking_time, 'HH24:MI') as "timeSlot",
                             cr.model_name as "carModel",
                             cr.id as "carId",
-                            cr.branch as "carBranch",
+                            br_car.name as "carBranch",
                             b.notes,
                             s.name as "salesperson",
                             br.name as "branch"
                         FROM public.bookings b
                         JOIN public.customers c ON b.customer_id = c.id
                         JOIN public.cars cr ON b.car_id = cr.id
+                        JOIN public.branches br_car ON cr.branch_id = br_car.id
                         JOIN public.salespeople s ON b.salesperson_id = s.id
                         JOIN public.branches br ON b.branch_id = br.id
                         WHERE br.name = $1
@@ -318,6 +337,52 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 client.release();
             }
         }
+        // --- SALESPEOPLE ENDPOINT ---
+        else if (url.pathname.endsWith('/salespeople')) {
+            const userData = verifyToken(req);
+            if (!userData) return sendResponse(res, 401, { message: 'Authentication required' });
+
+            const client = await pool.connect();
+            try {
+                if (req.method === 'GET') {
+                    const branch = url.searchParams.get('branch');
+                    let query = 'SELECT id, name, is_active as "isActive", branch_id as "branchId" FROM public.salespeople';
+                    const params = [];
+                    
+                    if (branch) {
+                        query += ' WHERE branch_id = (SELECT id FROM public.branches WHERE name = $1)';
+                        params.push(branch);
+                    }
+                    
+                    query += ' ORDER BY name';
+                    const result = await client.query(query, params);
+                    sendResponse(res, 200, result.rows);
+                } else if (req.method === 'POST') {
+                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    const { name, branchId, isActive } = await parseJSONBody(req);
+                    const result = await client.query(
+                        'INSERT INTO public.salespeople (name, branch_id, is_active) VALUES ($1, $2, $3) RETURNING id, name, is_active as "isActive", branch_id as "branchId"',
+                        [name, branchId, isActive !== undefined ? isActive : true]
+                    );
+                    sendResponse(res, 201, result.rows[0]);
+                } else if (req.method === 'PUT') {
+                    if (userData.role !== 'admin') return sendResponse(res, 403, { message: 'Admin access required' });
+                    const { id, name, branchId, isActive } = await parseJSONBody(req);
+                    const result = await client.query(
+                        'UPDATE public.salespeople SET name = $1, branch_id = $2, is_active = $3 WHERE id = $4 RETURNING id, name, is_active as "isActive", branch_id as "branchId"',
+                        [name, branchId, isActive, id]
+                    );
+                    sendResponse(res, 200, result.rows[0]);
+                } else {
+                    sendResponse(res, 405, { message: 'Method Not Allowed' });
+                }
+            } catch (err) {
+                console.error('Salespeople DB Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
         // --- UNAVAILABILITY ENDPOINT ---
         else if (url.pathname.endsWith('/unavailability')) {
             const userData = verifyToken(req);
@@ -330,11 +395,12 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     if (!branch) return sendResponse(res, 400, { message: 'Branch is required' });
                     
                     const result = await client.query(`
-                        SELECT u.id, c.model_name as "carModel", c.id as "carId", c.branch as "carBranch", u.unavailability_date as "date", 
+                        SELECT u.id, c.model_name as "carModel", c.id as "carId", b_car.name as "carBranch", u.unavailability_date as "date", 
                                to_char(u.start_time, 'HH24:MI') as "startTime", 
                                to_char(u.end_time, 'HH24:MI') as "endTime", u.reason
                         FROM public.car_unavailability u
                         JOIN public.cars c ON u.car_id = c.id
+                        JOIN public.branches b_car ON c.branch_id = b_car.id
                         JOIN public.branches b ON u.branch_id = b.id
                         WHERE b.name = $1
                         ORDER BY u.unavailability_date, u.start_time

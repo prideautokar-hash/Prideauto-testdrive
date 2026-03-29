@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Booking, CarModel, Unavailability, Car } from '../types';
+import { Booking, CarModel, Unavailability, Car, Salesperson } from '../types';
 import { CAR_MODELS, TIME_SLOTS, AVAILABLE_CAR_MODELS } from '../constants';
 
 interface BookingModalProps {
@@ -11,9 +11,10 @@ interface BookingModalProps {
   unavailability: Unavailability[];
   canSave: boolean;
   carModels: Car[];
+  salespeople: Salesperson[];
 }
 
-const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability, canSave, carModels }) => {
+const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability, canSave, carModels, salespeople }) => {
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -156,7 +157,16 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">ชื่อเซลส์*</label>
-              <input type="text" value={salesperson} onChange={e => setSalesperson(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" />
+              <select 
+                value={salesperson} 
+                onChange={e => setSalesperson(e.target.value)} 
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">เลือกเซลส์</option>
+                {salespeople.map(s => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">หมายเหตุ</label>

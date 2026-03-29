@@ -1,4 +1,4 @@
-import { Booking, Branch, Unavailability, CarModel, Car } from '../types';
+import { Booking, Branch, Unavailability, CarModel, Car, Salesperson } from '../types';
 import apiClient from './apiClient';
 
 export const login = async (username: string, password: string): Promise<{ token: string; role: string }> => {
@@ -31,6 +31,26 @@ export const getCars = async (token: string): Promise<Car[]> => {
 
 export const getBranches = async (token: string): Promise<{ id: number; name: string }[]> => {
   return apiClient<{ id: number; name: string }[]>('branches', { token });
+};
+
+export const getSalespeople = async (branch: Branch, token: string): Promise<Salesperson[]> => {
+  return apiClient<Salesperson[]>(`salespeople?branch=${encodeURIComponent(branch)}`, { token });
+};
+
+export const addSalesperson = async (salespersonData: Omit<Salesperson, 'id'>, token: string): Promise<Salesperson> => {
+  return apiClient<Salesperson>('salespeople', {
+    data: salespersonData,
+    token,
+    method: 'POST'
+  });
+};
+
+export const updateSalesperson = async (salespersonData: Salesperson, token: string): Promise<Salesperson> => {
+  return apiClient<Salesperson>('salespeople', {
+    data: salespersonData,
+    token,
+    method: 'PUT'
+  });
 };
 
 export const addCar = async (carData: Omit<Car, 'id'>, token: string): Promise<Car> => {

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Booking, Branch, Unavailability, CarModel, Car } from './types';
+import { Booking, Branch, Unavailability, CarModel, Car, Salesperson } from './types';
 import { CAR_MODELS, AVAILABLE_CAR_MODELS } from './constants';
 import CalendarView from './components/CalendarView';
 import SlotView from './components/SlotView';
@@ -8,11 +8,11 @@ import DashboardView from './components/DashboardView';
 import BookingModal from './components/BookingModal';
 import { CalendarIcon, ListIcon, GridIcon, ChartIcon, WrenchIcon, SettingsIcon } from './components/icons';
 import LoginPage from './components/LoginPage';
-import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars, getBranches } from './services/apiService';
+import { getBookings, addBooking, deleteBooking, getAppSetting, setAppSetting, getUnavailability, addUnavailability, deleteUnavailability, getCars, getBranches, getSalespeople } from './services/apiService';
 import { Logo } from './components/Logo';
 import UnavailableCarsView from './components/UnavailableCarsView';
 import CarManagementView from './components/CarManagementView';
-import { addCar, updateCar, deleteCar } from './services/apiService';
+import { addCar, updateCar, deleteCar, addSalesperson, updateSalesperson } from './services/apiService';
 
 type Page = 'calendar' | 'slots' | 'usage' | 'dashboard' | 'unavailable' | 'cars';
 
@@ -25,6 +25,7 @@ const App: React.FC = () => {
     const [unavailability, setUnavailability] = useState<Unavailability[]>([]);
     const [cars, setCars] = useState<Car[]>([]);
     const [branches, setBranches] = useState<{ id: number; name: string }[]>([]);
+    const [salespeople, setSalespeople] = useState<Salesperson[]>([]);
     
     const [currentPage, setCurrentPage] = useState<Page>('calendar');
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -43,7 +44,8 @@ const App: React.FC = () => {
                 getUnavailability(branch, token),
                 getAppSetting('app_logo', token),
                 getCars(token),
-                getBranches(token)
+                getBranches(token),
+                getSalespeople(branch, token)
             ]);
 
             const bookingsResult = results[0];
@@ -51,6 +53,7 @@ const App: React.FC = () => {
             const appLogoResult = results[2];
             const carsResult = results[3];
             const branchesResult = results[4];
+            const salespeopleResult = results[5];
 
             if (bookingsResult.status === 'fulfilled') {
                 setBookings(bookingsResult.value);
@@ -83,6 +86,12 @@ const App: React.FC = () => {
                 setBranches(branchesResult.value);
             } else {
                 console.error('Failed to fetch branches:', branchesResult.reason);
+            }
+
+            if (salespeopleResult.status === 'fulfilled') {
+                setSalespeople(salespeopleResult.value);
+            } else {
+                console.error('Failed to fetch salespeople:', salespeopleResult.reason);
             }
 
         } catch (err) {
@@ -205,6 +214,26 @@ const App: React.FC = () => {
         }
     };
 
+    const handleAddSalesperson = async (salespersonData: Omit<Salesperson, 'id'>) => {
+        if (!authToken || !currentBranch) return;
+        try {
+            await addSalesperson(salespersonData, authToken);
+            fetchData(currentBranch, authToken);
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
+    const handleUpdateSalesperson = async (salespersonData: Salesperson) => {
+        if (!authToken || !currentBranch) return;
+        try {
+            await updateSalesperson(salespersonData, authToken);
+            fetchData(currentBranch, authToken);
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
 
     const handleLoginSuccess = (branch: Branch, token: string, role: string) => {
         localStorage.setItem('authToken', token);
@@ -276,9 +305,12 @@ const App: React.FC = () => {
                 return isAdmin ? <CarManagementView 
                             cars={cars}
                             branches={branches}
+                            salespeople={salespeople}
                             onAddCar={handleAddCar}
                             onUpdateCar={handleUpdateCar}
                             onDeleteCar={handleDeleteCar}
+                            onAddSalesperson={handleAddSalesperson}
+                            onUpdateSalesperson={handleUpdateSalesperson}
                         /> : <p className="p-6">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>;
             default:
                 return null;
@@ -370,6 +402,7 @@ const App: React.FC = () => {
                 unavailability={unavailability}
                 canSave={isAdmin}
                 carModels={activeCars}
+                salespeople={salespeople.filter(s => s.isActive)}
             />
         </div>
     );

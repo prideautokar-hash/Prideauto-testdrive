@@ -23,7 +23,15 @@ export interface Car {
   id: number;
   modelName: string;
   isActive: boolean;
-  branch: Branch;
+  branchId: number;
+  branch?: string;
+}
+
+export interface Salesperson {
+  id: number;
+  name: string;
+  isActive: boolean;
+  branchId: number;
 }
 
 export interface Booking {
