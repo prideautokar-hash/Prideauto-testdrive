@@ -56,6 +56,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [reportBookings, setReportBookings] = useState<Booking[]>([]);
     const [reportUnavailability, setReportUnavailability] = useState<Unavailability[]>([]);
+    const [hasFetched, setHasFetched] = useState(false);
     
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,15 +79,21 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
     const fetchReports = async () => {
         setIsSubmitting(true);
         setError('');
+        setHasFetched(false);
         try {
+            console.log('Fetching reports for:', startDate, 'to', endDate);
             const [bookingsData, unavailabilityData] = await Promise.all([
                 getReportBookings(startDate, endDate, authToken),
                 getReportUnavailability(startDate, endDate, authToken)
             ]);
-            setReportBookings(bookingsData);
-            setReportUnavailability(unavailabilityData);
+            console.log('Fetched bookings:', bookingsData?.length);
+            console.log('Fetched unavailability:', unavailabilityData?.length);
+            setReportBookings(bookingsData || []);
+            setReportUnavailability(unavailabilityData || []);
+            setHasFetched(true);
         } catch (err: any) {
-            setError('ไม่สามารถดึงข้อมูลรายงานได้');
+            console.error('Fetch reports error:', err);
+            setError('ไม่สามารถดึงข้อมูลรายงานได้: ' + (err.message || 'Unknown error'));
         } finally {
             setIsSubmitting(false);
         }
@@ -503,6 +510,9 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
             {activeTab === 'reports' && (
                 <div className="bg-white p-6 rounded-lg shadow-md border mb-8">
                     <h2 className="text-xl font-semibold mb-4">ดึงข้อมูลรายงาน</h2>
+                    
+                    {error && <p className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-sm font-medium border border-red-200">{error}</p>}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">จากวันที่</label>
@@ -536,10 +546,10 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         
                         <button 
                             onClick={exportBookingsToExcel}
-                            disabled={isSubmitting}
-                            className={`px-6 py-2 rounded-md font-medium transition-all shadow-sm flex items-center gap-2 cursor-pointer ${
+                            disabled={isSubmitting || reportBookings.length === 0}
+                            className={`px-6 py-2 rounded-md font-medium transition-all shadow-sm flex items-center gap-2 ${
                                 reportBookings.length > 0 
-                                ? 'bg-green-600 text-white hover:bg-green-700' 
+                                ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer' 
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                             }`}
                         >
@@ -549,10 +559,10 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         
                         <button 
                             onClick={exportUnavailabilityToExcel}
-                            disabled={isSubmitting}
-                            className={`px-6 py-2 rounded-md font-medium transition-all shadow-sm flex items-center gap-2 cursor-pointer ${
+                            disabled={isSubmitting || reportUnavailability.length === 0}
+                            className={`px-6 py-2 rounded-md font-medium transition-all shadow-sm flex items-center gap-2 ${
                                 reportUnavailability.length > 0 
-                                ? 'bg-green-600 text-white hover:bg-green-700' 
+                                ? 'bg-green-600 text-white hover:bg-green-700 cursor-pointer' 
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                             }`}
                         >
@@ -561,10 +571,22 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         </button>
                     </div>
                     
-                    {reportBookings.length === 0 && reportUnavailability.length === 0 && !isSubmitting && (
+                    {!hasFetched && !isSubmitting && !error && (
                         <p className="mt-4 text-sm text-gray-500 italic">
                             * กรุณากดปุ่ม "ดึงข้อมูล" ก่อนเพื่อเตรียมข้อมูลสำหรับการ Export
                         </p>
+                    )}
+                    
+                    {hasFetched && reportBookings.length === 0 && reportUnavailability.length === 0 && !isSubmitting && !error && (
+                        <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-md text-sm border border-blue-100">
+                            <strong>ดึงข้อมูลสำเร็จ:</strong> แต่ไม่พบรายการจองหรือรายการรถไม่ว่างในช่วงวันที่เลือก ({startDate} ถึง {endDate})
+                        </div>
+                    )}
+
+                    {hasFetched && (reportBookings.length > 0 || reportUnavailability.length > 0) && !isSubmitting && !error && (
+                        <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md text-sm border border-green-100">
+                            <strong>ดึงข้อมูลสำเร็จ:</strong> พบรายการจอง {reportBookings.length} รายการ และรายการรถไม่ว่าง {reportUnavailability.length} รายการ คุณสามารถกด Export ได้แล้ว
+                        </div>
                     )}
                 </div>
             )}
