@@ -645,16 +645,21 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         b.booking_date as "date",
                         to_char(b.booking_time, 'HH24:MI') as "timeSlot",
                         cr.model_name as "carModel",
+                        cr.model_name as "carModelFull",
+                        cr.short_model_name as "carModelShort",
+                        cr.car_model as "carModelType",
                         br_car.name as "carBranch",
                         b.notes,
                         s.name as "salesperson",
-                        br.name as "branch"
+                        br.name as "branch",
+                        u.username as "recordedBy"
                     FROM public.bookings b
                     JOIN public.customers c ON b.customer_id = c.id
                     JOIN public.cars cr ON b.car_id = cr.id
                     JOIN public.branches br_car ON cr.branch_id = br_car.id
                     JOIN public.salespeople s ON b.salesperson_id = s.id
                     JOIN public.branches br ON b.branch_id = br.id
+                    LEFT JOIN public.users u ON b.created_by_user_id = u.id
                     WHERE b.booking_date BETWEEN $1 AND $2
                     ORDER BY b.booking_date, b.booking_time
                 `, [startDate, endDate]);
@@ -684,9 +689,15 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
             const client = await pool.connect();
             try {
                 const result = await client.query(`
-                    SELECT u.id, c.model_name as "carModel", b_car.name as "carBranch", u.unavailability_date as "date", 
-                           to_char(u.start_time, 'HH24:MI') as "startTime", 
-                           to_char(u.end_time, 'HH24:MI') as "endTime", u.reason,
+                    SELECT u.id, 
+                           c.model_name as "carModel",
+                           c.model_name as "carModelFull", 
+                           c.short_model_name as "carModelShort",
+                           c.car_model as "carModelType",
+                           b_car.name as "carBranch", 
+                           u.unavailability_date as "date", 
+                           to_char(u.start_time, 'HH24:MI') || ' - ' || to_char(u.end_time, 'HH24:MI') as "period", 
+                           u.reason,
                            br.name as "branch"
                     FROM public.car_unavailability u
                     JOIN public.cars c ON u.car_id = c.id

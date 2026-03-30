@@ -48,6 +48,11 @@ export interface Booking {
   notes?: string;
   salesperson: string;
   branch: Branch;
+  // Report specific fields
+  carModelFull?: string;
+  carModelShort?: string;
+  carModelType?: string;
+  recordedBy?: string;
 }
 
 export interface Unavailability {
@@ -59,6 +64,11 @@ export interface Unavailability {
     startTime: string; // HH:mm
     endTime: string; // HH:mm
     reason?: string;
+    // Report specific fields
+    carModelFull?: string;
+    carModelShort?: string;
+    carModelType?: string;
+    period?: string;
 }
 
 export interface User {

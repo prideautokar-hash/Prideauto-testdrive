@@ -3,6 +3,8 @@ import { Car, Branch, Salesperson, User, Booking, Unavailability } from '../type
 import { TrashIcon, WrenchIcon, UserIcon, CarIcon, ChartIcon, ListIcon } from './icons';
 import { getUsers, addUser, updateUser, deleteUser, getReportBookings, getReportUnavailability, executeSql } from '../services/apiService';
 import SearchableSelect from './SearchableSelect';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface CarManagementViewProps {
     cars: Car[];
@@ -78,8 +80,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
         setError('');
         try {
             const [bookingsData, unavailabilityData] = await Promise.all([
-                getReportBookings(authToken, startDate, endDate),
-                getReportUnavailability(authToken, startDate, endDate)
+                getReportBookings(startDate, endDate, authToken),
+                getReportUnavailability(startDate, endDate, authToken)
             ]);
             setReportBookings(bookingsData);
             setReportUnavailability(unavailabilityData);
@@ -88,6 +90,59 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const exportBookingsToExcel = () => {
+        if (reportBookings.length === 0) {
+            alert('ไม่มีข้อมูลสำหรับการส่งออก');
+            return;
+        }
+
+        const data = reportBookings.map(b => ({
+            'วันที่ test drive': b.date,
+            'เวลาที่ test drive': b.timeSlot,
+            'ชื่อลูกค้า': b.customerName,
+            'เบอร์โทร': b.phoneNumber || '',
+            'รุ่นรถชื่อเต็ม': b.carModelFull || '',
+            'รุ่นรถชื่อย่อ': b.carModelShort || '',
+            'รุ่นรถ': b.carModelType || '',
+            'สาขา': b.carBranch,
+            'เซลส์': b.salesperson,
+            'หมายเหตุ': b.notes || '',
+            'ผู้ทำการบันทึก': b.recordedBy || ''
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Test Drive Report");
+        
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+        saveAs(blob, `TestDrive_Report_${startDate}_to_${endDate}.xlsx`);
+    };
+
+    const exportUnavailabilityToExcel = () => {
+        if (reportUnavailability.length === 0) {
+            alert('ไม่มีข้อมูลสำหรับการส่งออก');
+            return;
+        }
+
+        const data = reportUnavailability.map(u => ({
+            'วันที่รถไม่ว่าง': u.date,
+            'ช่วงเวลา': u.period || `${u.startTime} - ${u.endTime}`,
+            'รุ่นรถชื่อเต็ม': u.carModelFull || '',
+            'รุ่นรถชื่อย่อ': u.carModelShort || '',
+            'รุ่นรถ': u.carModelType || '',
+            'เหตุผล': u.reason || ''
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Unavailability Report");
+        
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+        saveAs(blob, `Unavailability_Report_${startDate}_to_${endDate}.xlsx`);
     };
 
     const resetForm = () => {
@@ -477,6 +532,20 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         >
                             {isSubmitting ? 'กำลังโหลด...' : 'ดึงข้อมูล'}
                         </button>
+                        <button 
+                            onClick={exportBookingsToExcel}
+                            disabled={isSubmitting || reportBookings.length === 0}
+                            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 h-[42px] text-sm font-medium"
+                        >
+                            Export Test Drive (Excel)
+                        </button>
+                        <button 
+                            onClick={exportUnavailabilityToExcel}
+                            disabled={isSubmitting || reportUnavailability.length === 0}
+                            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 h-[42px] text-sm font-medium"
+                        >
+                            Export Unavailability (Excel)
+                        </button>
                     </div>
                 </div>
             )}
@@ -643,19 +712,21 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ลูกค้า</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">รุ่นรถ</th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">เซลส์</th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ผู้บันทึก</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {reportBookings.length === 0 ? (
-                                            <tr><td colSpan={5} className="px-4 py-4 text-center text-gray-500 text-sm">ไม่มีข้อมูล</td></tr>
+                                            <tr><td colSpan={6} className="px-4 py-4 text-center text-gray-500 text-sm">ไม่มีข้อมูล</td></tr>
                                         ) : (
                                             reportBookings.map(b => (
                                                 <tr key={b.id} className="text-sm">
                                                     <td className="px-4 py-2">{b.date}</td>
                                                     <td className="px-4 py-2">{b.timeSlot}</td>
                                                     <td className="px-4 py-2">{b.customerName}</td>
-                                                    <td className="px-4 py-2">{b.carModel}</td>
+                                                    <td className="px-4 py-2">{b.carModelShort || b.carModel}</td>
                                                     <td className="px-4 py-2">{b.salesperson}</td>
+                                                    <td className="px-4 py-2">{b.recordedBy || '-'}</td>
                                                 </tr>
                                             ))
                                         )}
@@ -686,8 +757,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                             reportUnavailability.map(u => (
                                                 <tr key={u.id} className="text-sm">
                                                     <td className="px-4 py-2">{u.date}</td>
-                                                    <td className="px-4 py-2">{u.startTime} - {u.endTime}</td>
-                                                    <td className="px-4 py-2">{u.carModel}</td>
+                                                    <td className="px-4 py-2">{u.period || `${u.startTime} - ${u.endTime}`}</td>
+                                                    <td className="px-4 py-2">{u.carModelShort || u.carModel}</td>
                                                     <td className="px-4 py-2">{u.reason}</td>
                                                 </tr>
                                             ))
