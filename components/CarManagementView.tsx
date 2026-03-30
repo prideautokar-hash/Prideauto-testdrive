@@ -93,8 +93,9 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
     };
 
     const exportBookingsToExcel = () => {
+        console.log('Exporting bookings:', reportBookings.length, 'records');
         if (reportBookings.length === 0) {
-            alert('ไม่มีข้อมูลสำหรับการส่งออก');
+            alert('ไม่มีข้อมูลสำหรับการส่งออก กรุณากดปุ่ม "ดึงข้อมูล" ก่อน');
             return;
         }
 
@@ -116,14 +117,13 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Test Drive Report");
         
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-        saveAs(blob, `TestDrive_Report_${startDate}_to_${endDate}.xlsx`);
+        XLSX.writeFile(workbook, `TestDrive_Report_${startDate}_to_${endDate}.xlsx`);
     };
 
     const exportUnavailabilityToExcel = () => {
+        console.log('Exporting unavailability:', reportUnavailability.length, 'records');
         if (reportUnavailability.length === 0) {
-            alert('ไม่มีข้อมูลสำหรับการส่งออก');
+            alert('ไม่มีข้อมูลสำหรับการส่งออก กรุณากดปุ่ม "ดึงข้อมูล" ก่อน');
             return;
         }
 
@@ -140,9 +140,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Unavailability Report");
         
-        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-        saveAs(blob, `Unavailability_Report_${startDate}_to_${endDate}.xlsx`);
+        XLSX.writeFile(workbook, `Unavailability_Report_${startDate}_to_${endDate}.xlsx`);
     };
 
     const resetForm = () => {
@@ -505,14 +503,14 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
             {activeTab === 'reports' && (
                 <div className="bg-white p-6 rounded-lg shadow-md border mb-8">
                     <h2 className="text-xl font-semibold mb-4">ดึงข้อมูลรายงาน</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">จากวันที่</label>
                             <input 
                                 type="date" 
                                 value={startDate} 
                                 onChange={e => setStartDate(e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
@@ -521,32 +519,53 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                 type="date" 
                                 value={endDate} 
                                 onChange={e => setEndDate(e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-3">
                         <button 
                             onClick={fetchReports}
                             disabled={isSubmitting}
                             style={{ backgroundColor: '#7D9AB9' }}
-                            className="text-white px-6 py-2 rounded-md hover:opacity-90 disabled:bg-gray-400 h-[42px]"
+                            className="text-white px-8 py-2 rounded-md hover:opacity-90 disabled:bg-gray-400 font-medium transition-all shadow-sm"
                         >
-                            {isSubmitting ? 'กำลังโหลด...' : 'ดึงข้อมูล'}
+                            {isSubmitting ? 'กำลังโหลด...' : '1. ดึงข้อมูล'}
                         </button>
+                        
                         <button 
                             onClick={exportBookingsToExcel}
-                            disabled={isSubmitting || reportBookings.length === 0}
-                            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 h-[42px] text-sm font-medium"
+                            disabled={isSubmitting}
+                            className={`px-6 py-2 rounded-md font-medium transition-all shadow-sm flex items-center gap-2 cursor-pointer ${
+                                reportBookings.length > 0 
+                                ? 'bg-green-600 text-white hover:bg-green-700' 
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                            }`}
                         >
-                            Export Test Drive (Excel)
+                            <ChartIcon className="w-4 h-4" />
+                            2. Export Test Drive (Excel)
                         </button>
+                        
                         <button 
                             onClick={exportUnavailabilityToExcel}
-                            disabled={isSubmitting || reportUnavailability.length === 0}
-                            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:bg-gray-400 h-[42px] text-sm font-medium"
+                            disabled={isSubmitting}
+                            className={`px-6 py-2 rounded-md font-medium transition-all shadow-sm flex items-center gap-2 cursor-pointer ${
+                                reportUnavailability.length > 0 
+                                ? 'bg-green-600 text-white hover:bg-green-700' 
+                                : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                            }`}
                         >
-                            Export Unavailability (Excel)
+                            <WrenchIcon className="w-4 h-4" />
+                            3. Export Unavailability (Excel)
                         </button>
                     </div>
+                    
+                    {reportBookings.length === 0 && reportUnavailability.length === 0 && !isSubmitting && (
+                        <p className="mt-4 text-sm text-gray-500 italic">
+                            * กรุณากดปุ่ม "ดึงข้อมูล" ก่อนเพื่อเตรียมข้อมูลสำหรับการ Export
+                        </p>
+                    )}
                 </div>
             )}
 
