@@ -143,6 +143,101 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 sendResponse(res, 405, { message: 'Method Not Allowed' });
             }
         }
+        // --- REPORTS ENDPOINT ---
+        else if (url.pathname.endsWith('/reports/bookings')) {
+            const userData = verifyToken(req);
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
+                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+            }
+
+            const startDate = url.searchParams.get('startDate');
+            const endDate = url.searchParams.get('endDate');
+
+            const client = await pool.connect();
+            try {
+                const result = await client.query(`
+                    SELECT 
+                        b.id, 
+                        c.name as "customerName", 
+                        c.phone_number as "phoneNumber",
+                        b.booking_date as "date",
+                        to_char(b.booking_time, 'HH24:MI') as "timeSlot",
+                        cr.model_name as "carModel",
+                        cr.model_name as "carModelFull",
+                        cr.short_model_name as "carModelShort",
+                        cr.car_model as "carModelType",
+                        br_car.name as "carBranch",
+                        b.notes,
+                        s.name as "salesperson",
+                        br.name as "branch",
+                        u.username as "recordedBy"
+                    FROM public.bookings b
+                    JOIN public.customers c ON b.customer_id = c.id
+                    JOIN public.cars cr ON b.car_id = cr.id
+                    JOIN public.branches br_car ON cr.branch_id = br_car.id
+                    JOIN public.salespeople s ON b.salesperson_id = s.id
+                    JOIN public.branches br ON b.branch_id = br.id
+                    LEFT JOIN public.users u ON b.created_by_user_id = u.id
+                    WHERE b.booking_date BETWEEN $1 AND $2
+                    ORDER BY b.booking_date, b.booking_time
+                `, [startDate, endDate]);
+                
+                const formattedRows = result.rows.map(row => ({
+                    ...row,
+                    date: new Date(row.date).toISOString().split('T')[0]
+                }));
+
+                sendResponse(res, 200, formattedRows);
+            } catch (err) {
+                console.error('Reports Bookings Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
+        else if (url.pathname.endsWith('/reports/unavailability')) {
+            const userData = verifyToken(req);
+            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
+                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
+            }
+
+            const startDate = url.searchParams.get('startDate');
+            const endDate = url.searchParams.get('endDate');
+
+            const client = await pool.connect();
+            try {
+                const result = await client.query(`
+                    SELECT u.id, 
+                           c.model_name as "carModel",
+                           c.model_name as "carModelFull", 
+                           c.short_model_name as "carModelShort",
+                           c.car_model as "carModelType",
+                           b_car.name as "carBranch", 
+                           u.unavailability_date as "date", 
+                           to_char(u.start_time, 'HH24:MI') || ' - ' || to_char(u.end_time, 'HH24:MI') as "period", 
+                           u.reason,
+                           br.name as "branch"
+                    FROM public.car_unavailability u
+                    JOIN public.cars c ON u.car_id = c.id
+                    JOIN public.branches b_car ON c.branch_id = b_car.id
+                    JOIN public.branches br ON u.branch_id = br.id
+                    WHERE u.unavailability_date BETWEEN $1 AND $2
+                    ORDER BY u.unavailability_date, u.start_time
+                `, [startDate, endDate]);
+
+                const formattedRows = result.rows.map(row => ({
+                    ...row,
+                    date: new Date(row.date).toISOString().split('T')[0]
+                }));
+
+                sendResponse(res, 200, formattedRows);
+            } catch (err) {
+                console.error('Reports Unavailability Error:', err);
+                sendResponse(res, 500, { message: 'Internal Server Error' });
+            } finally {
+                client.release();
+            }
+        }
         // --- CARS ENDPOINT ---
         else if (url.pathname.endsWith('/cars')) {
             const userData = verifyToken(req);
@@ -620,101 +715,6 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                 }
             } catch (err) {
                 console.error('Users DB Error:', err);
-                sendResponse(res, 500, { message: 'Internal Server Error' });
-            } finally {
-                client.release();
-            }
-        }
-        // --- REPORTS ENDPOINT ---
-        else if (url.pathname.endsWith('/reports/bookings')) {
-            const userData = verifyToken(req);
-            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
-                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
-            }
-
-            const startDate = url.searchParams.get('startDate');
-            const endDate = url.searchParams.get('endDate');
-
-            const client = await pool.connect();
-            try {
-                const result = await client.query(`
-                    SELECT 
-                        b.id, 
-                        c.name as "customerName", 
-                        c.phone_number as "phoneNumber",
-                        b.booking_date as "date",
-                        to_char(b.booking_time, 'HH24:MI') as "timeSlot",
-                        cr.model_name as "carModel",
-                        cr.model_name as "carModelFull",
-                        cr.short_model_name as "carModelShort",
-                        cr.car_model as "carModelType",
-                        br_car.name as "carBranch",
-                        b.notes,
-                        s.name as "salesperson",
-                        br.name as "branch",
-                        u.username as "recordedBy"
-                    FROM public.bookings b
-                    JOIN public.customers c ON b.customer_id = c.id
-                    JOIN public.cars cr ON b.car_id = cr.id
-                    JOIN public.branches br_car ON cr.branch_id = br_car.id
-                    JOIN public.salespeople s ON b.salesperson_id = s.id
-                    JOIN public.branches br ON b.branch_id = br.id
-                    LEFT JOIN public.users u ON b.created_by_user_id = u.id
-                    WHERE b.booking_date BETWEEN $1 AND $2
-                    ORDER BY b.booking_date, b.booking_time
-                `, [startDate, endDate]);
-                
-                const formattedRows = result.rows.map(row => ({
-                    ...row,
-                    date: new Date(row.date).toISOString().split('T')[0]
-                }));
-
-                sendResponse(res, 200, formattedRows);
-            } catch (err) {
-                console.error('Reports Bookings Error:', err);
-                sendResponse(res, 500, { message: 'Internal Server Error' });
-            } finally {
-                client.release();
-            }
-        }
-        else if (url.pathname.endsWith('/reports/unavailability')) {
-            const userData = verifyToken(req);
-            if (!userData || (userData.role !== 'admin' && userData.role !== 'executive')) {
-                return sendResponse(res, 403, { message: 'Forbidden: Admin access required' });
-            }
-
-            const startDate = url.searchParams.get('startDate');
-            const endDate = url.searchParams.get('endDate');
-
-            const client = await pool.connect();
-            try {
-                const result = await client.query(`
-                    SELECT u.id, 
-                           c.model_name as "carModel",
-                           c.model_name as "carModelFull", 
-                           c.short_model_name as "carModelShort",
-                           c.car_model as "carModelType",
-                           b_car.name as "carBranch", 
-                           u.unavailability_date as "date", 
-                           to_char(u.start_time, 'HH24:MI') || ' - ' || to_char(u.end_time, 'HH24:MI') as "period", 
-                           u.reason,
-                           br.name as "branch"
-                    FROM public.car_unavailability u
-                    JOIN public.cars c ON u.car_id = c.id
-                    JOIN public.branches b_car ON c.branch_id = b_car.id
-                    JOIN public.branches br ON u.branch_id = br.id
-                    WHERE u.unavailability_date BETWEEN $1 AND $2
-                    ORDER BY u.unavailability_date, u.start_time
-                `, [startDate, endDate]);
-
-                const formattedRows = result.rows.map(row => ({
-                    ...row,
-                    date: new Date(row.date).toISOString().split('T')[0]
-                }));
-
-                sendResponse(res, 200, formattedRows);
-            } catch (err) {
-                console.error('Reports Unavailability Error:', err);
                 sendResponse(res, 500, { message: 'Internal Server Error' });
             } finally {
                 client.release();
