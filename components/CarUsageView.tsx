@@ -56,21 +56,14 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
   
   const displayCars = useMemo(() => {
     const activeCars = carModels.filter(c => c.isActive);
-    const bookedModels = new Set(bookingsForSelectedDate.map(b => b.carModel));
-    const unavailableModels = new Set(unavailabilityForSelectedDate.map(u => u.carModel));
-    
-    const inactiveCarsWithData = carModels
-        .filter(c => !c.isActive && (bookedModels.has(c.modelName as CarModel) || unavailableModels.has(c.modelName as CarModel)));
-        
-    const allToDisplay = [...activeCars, ...inactiveCarsWithData];
     
     // Sort by branch: มหาสารคาม first, then others
-    return allToDisplay.sort((a, b) => {
+    return activeCars.sort((a, b) => {
       if (a.branch === 'มหาสารคาม' && b.branch !== 'มหาสารคาม') return -1;
       if (a.branch !== 'มหาสารคาม' && b.branch === 'มหาสารคาม') return 1;
       return a.modelName.localeCompare(b.modelName);
     });
-  }, [carModels, bookingsForSelectedDate, unavailabilityForSelectedDate]);
+  }, [carModels]);
 
   type GridCell = { type: 'booking', data: Booking } | { type: 'unavailable', data: Unavailability } | null;
 
