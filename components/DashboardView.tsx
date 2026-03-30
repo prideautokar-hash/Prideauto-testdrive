@@ -411,32 +411,34 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                 {/* Pie Chart */}
                 <div className="bg-white p-6 rounded-lg shadow border">
                     <h3 className="text-lg font-medium text-gray-900 mb-4">สัดส่วนการ Test Drive ตามรุ่นรถ</h3>
-                    <div className="flex flex-wrap justify-center items-center gap-2 mb-4 bg-gray-100 p-1 rounded-lg">
-                        <ChartButton label="รายวัน (เลือกเดือน)" period="day" current={pieChartPeriod} setter={setPieChartPeriod} />
-                        <ChartButton label="รายเดือน (เลือกปี)" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
-                        <ChartButton label="รายปี (ทั้งหมด)" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
-                    </div>
-                    <div className="flex justify-center mb-4">
-                        {pieChartPeriod === 'day' && (
-                            <input
-                                type="month"
-                                value={pieChartSelectedMonth}
-                                onChange={(e) => setPieChartSelectedMonth(e.target.value)}
-                                className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                            />
-                        )}
-                        {pieChartPeriod === 'month' && (
-                            <select
-                                value={pieChartSelectedYear}
-                                onChange={(e) => setPieChartSelectedYear(e.target.value)}
-                                className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                            >
-                                {Array.from({ length: 5 }, (_, i) => {
-                                    const year = new Date().getFullYear() - i;
-                                    return <option key={year} value={year}>{year}</option>;
-                                })}
-                            </select>
-                        )}
+                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
+                        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                            <ChartButton label="รายวัน" period="day" current={pieChartPeriod} setter={setPieChartPeriod} />
+                            <ChartButton label="รายเดือน" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
+                            <ChartButton label="รายปี" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {pieChartPeriod === 'day' && (
+                                <input
+                                    type="month"
+                                    value={pieChartSelectedMonth}
+                                    onChange={(e) => setPieChartSelectedMonth(e.target.value)}
+                                    className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                                />
+                            )}
+                            {pieChartPeriod === 'month' && (
+                                <select
+                                    value={pieChartSelectedYear}
+                                    onChange={(e) => setPieChartSelectedYear(e.target.value)}
+                                    className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                                >
+                                    {Array.from({ length: 5 }, (_, i) => {
+                                        const year = new Date().getFullYear() - i;
+                                        return <option key={year} value={year}>{year}</option>;
+                                    })}
+                                </select>
+                            )}
+                        </div>
                     </div>
                     <div style={{ width: '100%', height: 300 }}>
                          {pieChartData.length > 0 ? (
