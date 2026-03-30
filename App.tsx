@@ -337,8 +337,8 @@ const App: React.FC = () => {
                     <DesktopNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon />} />
                     <DesktopNavItem page="slots" label="Slots" icon={<ListIcon />} />
                     <DesktopNavItem page="usage" label="ตารางรถ" icon={<GridIcon />} />
-                    <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     {isAdmin && <DesktopNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon />} />}
+                    <DesktopNavItem page="dashboard" label="Dashboard" icon={<ChartIcon />} />
                     {isExecutive && <DesktopNavItem page="cars" label="Setting" icon={<SettingsIcon />} />}
                 </nav>
                  <button onClick={handleLogout} style={{ backgroundColor: '#7D9AB9' }} className="text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-colors">
@@ -369,8 +369,8 @@ const App: React.FC = () => {
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />
                 {isAdmin && <MobileNavItem page="unavailable" label="รถไม่พร้อม" icon={<WrenchIcon className="w-6 h-6" />} />}
-                {isExecutive && <MobileNavItem page="cars" label="Setting" icon={<SettingsIcon className="w-6 h-6" />} />}
                 <MobileNavItem page="dashboard" label="Dashboard" icon={<ChartIcon className="w-6 h-6" />} />
+                {isExecutive && <MobileNavItem page="cars" label="Setting" icon={<SettingsIcon className="w-6 h-6" />} />}
             </nav>
             
             <BookingModal 
