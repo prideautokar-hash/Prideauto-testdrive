@@ -271,7 +271,7 @@ const App: React.FC = () => {
             case 'usage':
                 return <CarUsageView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} carModels={cars} />;
             case 'dashboard':
-                return <DashboardView bookings={bookings} authToken={authToken!} />;
+                return <DashboardView bookings={bookings} authToken={authToken!} carModels={cars} />;
             case 'unavailable':
                 return isAdmin ? <UnavailableCarsView 
                             bookings={bookings}
