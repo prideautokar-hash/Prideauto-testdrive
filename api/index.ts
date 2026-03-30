@@ -152,7 +152,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
             try {
                 if (req.method === 'GET') {
                     const result = await client.query(`
-                        SELECT c.id, c.model_name as "modelName", c.is_active as "isActive", c.branch_id as "branchId", b.name as "branch"
+                        SELECT c.id, c.model_name as "modelName", c.short_model_name as "shortModelName", c.car_model as "carModel", c.is_active as "isActive", c.branch_id as "branchId", b.name as "branch"
                         FROM public.cars c
                         LEFT JOIN public.branches b ON c.branch_id = b.id
                         ORDER BY c.model_name
@@ -160,32 +160,32 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     sendResponse(res, 200, result.rows);
                 } else if (req.method === 'POST') {
                     if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
-                    const { modelName, branchId, isActive } = await parseJSONBody(req);
+                    const { modelName, shortModelName, carModel, branchId, isActive } = await parseJSONBody(req);
                     const result = await client.query(`
                         WITH inserted AS (
-                            INSERT INTO public.cars (model_name, branch_id, is_active) 
-                            VALUES ($1, $2, $3) 
-                            RETURNING id, model_name as "modelName", is_active as "isActive", branch_id as "branchId"
+                            INSERT INTO public.cars (model_name, short_model_name, car_model, branch_id, is_active) 
+                            VALUES ($1, $2, $3, $4, $5) 
+                            RETURNING id, model_name as "modelName", short_model_name as "shortModelName", car_model as "carModel", is_active as "isActive", branch_id as "branchId"
                         )
                         SELECT i.*, b.name as "branch"
                         FROM inserted i
                         LEFT JOIN public.branches b ON i."branchId" = b.id
-                    `, [modelName, branchId, isActive !== undefined ? isActive : true]);
+                    `, [modelName, shortModelName || null, carModel || null, branchId, isActive !== undefined ? isActive : true]);
                     sendResponse(res, 201, result.rows[0]);
                 } else if (req.method === 'PUT') {
                     if (userData.role !== 'admin' && userData.role !== 'executive') return sendResponse(res, 403, { message: 'Admin access required' });
-                    const { id, modelName, branchId, isActive } = await parseJSONBody(req);
+                    const { id, modelName, shortModelName, carModel, branchId, isActive } = await parseJSONBody(req);
                     const result = await client.query(`
                         WITH updated AS (
                             UPDATE public.cars 
-                            SET model_name = $1, branch_id = $2, is_active = $3 
-                            WHERE id = $4 
-                            RETURNING id, model_name as "modelName", is_active as "isActive", branch_id as "branchId"
+                            SET model_name = $1, short_model_name = $2, car_model = $3, branch_id = $4, is_active = $5 
+                            WHERE id = $6 
+                            RETURNING id, model_name as "modelName", short_model_name as "shortModelName", car_model as "carModel", is_active as "isActive", branch_id as "branchId"
                         )
                         SELECT u.*, b.name as "branch"
                         FROM updated u
                         LEFT JOIN public.branches b ON u."branchId" = b.id
-                    `, [modelName, branchId, isActive, id]);
+                    `, [modelName, shortModelName || null, carModel || null, branchId, isActive, id]);
                     if (result.rowCount === 0) return sendResponse(res, 404, { message: 'Car not found' });
                     sendResponse(res, 200, result.rows[0]);
                 } else if (req.method === 'DELETE') {

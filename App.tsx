@@ -265,7 +265,7 @@ const App: React.FC = () => {
 
         switch (currentPage) {
             case 'calendar':
-                return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} />;
+                return <CalendarView bookings={bookings} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} carModels={cars} />;
             case 'slots':
                 return <SlotView bookings={bookings} unavailability={unavailability} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openBookingModal={openBookingModal} onDeleteBooking={handleDeleteBooking} canDelete={isAdmin} canAdd={isAdmin} carModels={cars} />;
             case 'usage':

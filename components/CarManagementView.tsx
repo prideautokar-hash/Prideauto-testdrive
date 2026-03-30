@@ -34,6 +34,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
     const [editingUser, setEditingUser] = useState<User | null>(null);
     
     const [modelName, setModelName] = useState('');
+    const [shortModelName, setShortModelName] = useState('');
+    const [carModel, setCarModel] = useState('');
     const [carBranchId, setCarBranchId] = useState<number>(0);
     const [isActive, setIsActive] = useState(true);
     
@@ -90,6 +92,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
 
     const resetForm = () => {
         setModelName('');
+        setShortModelName('');
+        setCarModel('');
         setCarBranchId(branches.length > 0 ? branches[0].id : 0);
         setIsActive(true);
         
@@ -113,6 +117,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
     const handleEditCar = (car: Car) => {
         setEditingCar(car);
         setModelName(car.modelName);
+        setShortModelName(car.shortModelName || '');
+        setCarModel(car.carModel || '');
         setCarBranchId(car.branchId);
         setIsActive(car.isActive);
         setIsAdding(true);
@@ -154,9 +160,9 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
             if (activeTab === 'cars') {
                 if (!modelName) throw new Error('กรุณาระบุชื่อรุ่นรถ');
                 if (editingCar) {
-                    await onUpdateCar({ ...editingCar, modelName, branchId: carBranchId, isActive });
+                    await onUpdateCar({ ...editingCar, modelName, shortModelName, carModel, branchId: carBranchId, isActive });
                 } else {
-                    await onAddCar({ modelName, branchId: carBranchId, isActive });
+                    await onAddCar({ modelName, shortModelName, carModel, branchId: carBranchId, isActive });
                 }
             } else if (activeTab === 'salespeople') {
                 if (!salespersonName) throw new Error('กรุณาระบุชื่อเซลส์');
@@ -285,13 +291,33 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {activeTab === 'cars' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
+                                <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700">ชื่อรุ่นรถ (และสี)*</label>
                                     <input 
                                         type="text" 
                                         value={modelName} 
                                         onChange={e => setModelName(e.target.value)}
                                         placeholder="เช่น BYD Atto 3 (สีขาว)"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">ชื่อสั้น (Short Model Name)</label>
+                                    <input 
+                                        type="text" 
+                                        value={shortModelName} 
+                                        onChange={e => setShortModelName(e.target.value)}
+                                        placeholder="เช่น Atto 3"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">รุ่น (Car Model)</label>
+                                    <input 
+                                        type="text" 
+                                        value={carModel} 
+                                        onChange={e => setCarModel(e.target.value)}
+                                        placeholder="เช่น Premium"
                                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
                                 </div>
@@ -460,7 +486,9 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รุ่นรถ</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รุ่นรถ (Full)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อสั้น</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รุ่น</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สังกัดสาขา</th>
                                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
@@ -469,12 +497,14 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         <tbody className="bg-white divide-y divide-gray-200">
                             {cars.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-10 text-center text-gray-500 italic">ไม่มีข้อมูลรถในระบบ</td>
+                                    <td colSpan={6} className="px-6 py-10 text-center text-gray-500 italic">ไม่มีข้อมูลรถในระบบ</td>
                                 </tr>
                             ) : (
                                 cars.map(car => (
                                     <tr key={car.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{car.modelName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{car.shortModelName || '-'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{car.carModel || '-'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {branches.find(b => b.id === car.branchId)?.name || 'ไม่ระบุ'}
                                         </td>

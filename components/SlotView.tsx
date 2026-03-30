@@ -29,6 +29,16 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
   
   const selectedDateStringForInput = toYYYYMMDD(selectedDate);
 
+  const modelNameToShortName = useMemo(() => {
+    const map = new Map<string, string>();
+    carModels.forEach(c => {
+      if (c.shortModelName) {
+        map.set(c.modelName, c.shortModelName);
+      }
+    });
+    return map;
+  }, [carModels]);
+
   const activeCarModels = useMemo(() => carModels.filter(c => c.isActive).map(c => c.modelName as CarModel), [carModels]);
 
   const bookingsForSelectedDate = useMemo(() => {
@@ -131,7 +141,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                                    {slotBookings.map(booking => (
                                        <li key={booking.id} className="text-sm group relative bg-red-100 p-2 rounded">
                                            <p className="font-semibold"><span className="text-gray-600 font-medium">ลูกค้า: </span>{booking.customerName}</p>
-                                           <p className="text-gray-700">{booking.carModel} ({booking.carBranch})</p>
+                                           <p className="text-gray-700">{modelNameToShortName.get(booking.carModel) || booking.carModel} ({booking.carBranch})</p>
                                            <p className="text-xs text-gray-500 mt-1">เซลส์: {booking.salesperson}</p>
                                            {canDelete && (
                                              <button
@@ -179,7 +189,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
                                 <ul className="space-y-1">
                                     {slotUnavailability.map(u => (
                                         <li key={`unavail-${u.id}-${slot}`} className="text-xs bg-gray-100 text-gray-600 p-1.5 rounded">
-                                            {u.carModel} ({u.carBranch}) {u.reason ? `(${u.reason})` : ''}
+                                            {modelNameToShortName.get(u.carModel) || u.carModel} ({u.carBranch}) {u.reason ? `(${u.reason})` : ''}
                                         </li>
                                     ))}
                                 </ul>

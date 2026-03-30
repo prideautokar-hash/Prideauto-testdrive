@@ -54,26 +54,32 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     return unavailability.filter(u => u.date === selectedDateStringForInput);
   }, [unavailability, selectedDateStringForInput]);
   
-  const displayCarModels = useMemo(() => {
-    const activeModels = carModels.filter(c => c.isActive).map(c => c.modelName as CarModel);
+  const displayCars = useMemo(() => {
+    const activeCars = carModels.filter(c => c.isActive);
     const bookedModels = new Set(bookingsForSelectedDate.map(b => b.carModel));
     const unavailableModels = new Set(unavailabilityForSelectedDate.map(u => u.carModel));
     
-    const inactiveModelsWithData = carModels
-        .filter(c => !c.isActive && (bookedModels.has(c.modelName as CarModel) || unavailableModels.has(c.modelName as CarModel)))
-        .map(c => c.modelName as CarModel);
+    const inactiveCarsWithData = carModels
+        .filter(c => !c.isActive && (bookedModels.has(c.modelName as CarModel) || unavailableModels.has(c.modelName as CarModel)));
         
-    return [...activeModels, ...inactiveModelsWithData];
+    const allToDisplay = [...activeCars, ...inactiveCarsWithData];
+    
+    // Sort by branch: มหาสารคาม first, then others
+    return allToDisplay.sort((a, b) => {
+      if (a.branch === 'มหาสารคาม' && b.branch !== 'มหาสารคาม') return -1;
+      if (a.branch !== 'มหาสารคาม' && b.branch === 'มหาสารคาม') return 1;
+      return a.modelName.localeCompare(b.modelName);
+    });
   }, [carModels, bookingsForSelectedDate, unavailabilityForSelectedDate]);
 
   type GridCell = { type: 'booking', data: Booking } | { type: 'unavailable', data: Unavailability } | null;
 
   const usageGrid = useMemo(() => {
-    const grid = new Map<string, Map<CarModel, GridCell>>();
+    const grid = new Map<string, Map<string, GridCell>>();
     
     TIME_SLOTS.forEach(slot => {
-      const slotMap = new Map<CarModel, GridCell>();
-      displayCarModels.forEach(model => slotMap.set(model, null));
+      const slotMap = new Map<string, GridCell>();
+      displayCars.forEach(car => slotMap.set(car.modelName, null));
       grid.set(slot, slotMap);
     });
 
@@ -94,11 +100,11 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     });
     
     return grid;
-  }, [bookingsForSelectedDate, unavailabilityForSelectedDate, displayCarModels]);
+  }, [bookingsForSelectedDate, unavailabilityForSelectedDate, displayCars]);
   
   const carUsageStatus = useMemo(() => {
-    const statusMap = new Map<CarModel, boolean>();
-    displayCarModels.forEach(model => statusMap.set(model, false));
+    const statusMap = new Map<string, boolean>();
+    displayCars.forEach(car => statusMap.set(car.modelName, false));
     
     bookingsForSelectedDate.forEach(booking => {
         statusMap.set(booking.carModel, true);
@@ -109,7 +115,7 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
     });
 
     return statusMap;
-  }, [bookingsForSelectedDate, unavailabilityForSelectedDate, displayCarModels]);
+  }, [bookingsForSelectedDate, unavailabilityForSelectedDate, displayCars]);
 
   const thaiDateFormat = new Intl.DateTimeFormat('th-TH', {
     day: 'numeric',
@@ -143,11 +149,11 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
               <thead className="bg-gray-50">
                   <tr>
                       <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">เวลา</th>
-                      {displayCarModels.map(model => (
-                          <th key={model} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                              {SHORT_CAR_MODEL_NAMES[model] || model}
+                      {displayCars.map(car => (
+                          <th key={car.id} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                              {car.shortModelName || SHORT_CAR_MODEL_NAMES[car.modelName] || car.modelName}
                               <br />
-                              <span className="text-[10px] font-normal lowercase">({carModelToBranch.get(model)})</span>
+                              <span className="text-[10px] font-normal lowercase">({car.branch})</span>
                           </th>
                       ))}
                   </tr>
@@ -155,10 +161,10 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
               <tbody className="bg-white divide-y divide-gray-200">
                   <tr className="font-semibold text-xs">
                         <td className="px-2 py-2 sticky left-0 bg-gray-50 z-10 text-gray-600 uppercase">สถานะ</td>
-                        {displayCarModels.map(model => {
-                            const isUsed = carUsageStatus.get(model);
+                        {displayCars.map(car => {
+                            const isUsed = carUsageStatus.get(car.modelName);
                             return (
-                                <td key={`status-${model}`} className={`px-2 py-2 text-center ${isUsed ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                                <td key={`status-${car.id}`} className={`px-2 py-2 text-center ${isUsed ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                     {isUsed ? 'Used' : 'Available'}
                                 </td>
                             );
@@ -167,32 +173,35 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
                   {Array.from(usageGrid.entries()).map(([slot, carMap]) => (
                       <tr key={slot}>
                           <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-900 sticky left-0 bg-white z-10">{slot}</td>
-                          {Array.from(carMap.entries()).map(([model, cellData]) => (
-                              <td key={`${slot}-${model}`} className={`px-2 py-2 whitespace-nowrap text-center ${cellData?.type === 'unavailable' ? 'bg-gray-100' : ''}`}>
-                                  {cellData?.type === 'booking' ? (
-                                      <div className="flex flex-col items-center justify-center text-xs text-center group relative">
-                                          <CheckIcon className="w-5 h-5 text-green-500" />
-                                          <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
-                                              <p className="font-bold">ลูกค้า: {cellData.data.customerName}</p>
-                                              <p>{cellData.data.phoneNumber}</p>
-                                              <p>เซลส์: {cellData.data.salesperson}</p>
-                                              {cellData.data.notes && <p>หมายเหตุ: {cellData.data.notes}</p>}
-                                          </div>
-                                      </div>
-                                  ) : cellData?.type === 'unavailable' ? (
-                                      <div className="flex items-center justify-center text-xs text-gray-500 group relative">
-                                        ไม่ว่าง
-                                        {cellData.data.reason && (
+                          {displayCars.map(car => {
+                              const cellData = carMap.get(car.modelName);
+                              return (
+                                <td key={`${slot}-${car.id}`} className={`px-2 py-2 whitespace-nowrap text-center ${cellData?.type === 'unavailable' ? 'bg-gray-100' : ''}`}>
+                                    {cellData?.type === 'booking' ? (
+                                        <div className="flex flex-col items-center justify-center text-xs text-center group relative">
+                                            <CheckIcon className="w-5 h-5 text-green-500" />
                                             <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
-                                                <p>เหตุผล: {cellData.data.reason}</p>
+                                                <p className="font-bold">ลูกค้า: {cellData.data.customerName}</p>
+                                                <p>{cellData.data.phoneNumber}</p>
+                                                <p>เซลส์: {cellData.data.salesperson}</p>
+                                                {cellData.data.notes && <p>หมายเหตุ: {cellData.data.notes}</p>}
                                             </div>
-                                        )}
-                                      </div>
-                                  ) : (
-                                     <XIcon className="w-4 h-4 text-gray-300 mx-auto" />
-                                  )}
-                              </td>
-                          ))}
+                                        </div>
+                                    ) : cellData?.type === 'unavailable' ? (
+                                        <div className="flex items-center justify-center text-xs text-gray-500 group relative">
+                                          ไม่ว่าง
+                                          {cellData.data.reason && (
+                                              <div className="absolute bottom-full mb-2 hidden group-hover:block w-48 bg-gray-800 text-white text-xs rounded-md p-2 z-20 text-left">
+                                                  <p>เหตุผล: {cellData.data.reason}</p>
+                                              </div>
+                                          )}
+                                        </div>
+                                    ) : (
+                                       <XIcon className="w-4 h-4 text-gray-300 mx-auto" />
+                                    )}
+                                </td>
+                              );
+                          })}
                       </tr>
                   ))}
               </tbody>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Booking, Branch } from '../types';
+import { Booking, Branch, Car } from '../types';
 import { TrashIcon } from './icons';
 
 interface CalendarViewProps {
@@ -10,6 +10,7 @@ interface CalendarViewProps {
   onDeleteBooking: (bookingId: string) => void;
   canDelete: boolean;
   canAdd: boolean;
+  carModels: Car[];
 }
 
 // Helper to format date to YYYY-MM-DD in local timezone
@@ -21,10 +22,20 @@ const toYYYYMMDD = (date: Date) => {
     return `${year}-${month}-${day}`;
 };
 
-const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, setSelectedDate, openBookingModal, onDeleteBooking, canDelete, canAdd, carModels }) => {
   const [summaryTab, setSummaryTab] = useState<'all' | Branch>('all');
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
+
+  const modelNameToShortName = useMemo(() => {
+    const map = new Map<string, string>();
+    carModels.forEach(c => {
+      if (c.shortModelName) {
+        map.set(c.modelName, c.shortModelName);
+      }
+    });
+    return map;
+  }, [carModels]);
 
   const daysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay();
@@ -143,22 +154,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
                 สรุปการจอง
             </h3>
             <div className="flex items-center gap-4">
-                <div className="flex items-end gap-0.5">
+                <div className="flex bg-gray-100 p-1 rounded-md">
                     <button 
                         onClick={() => setSummaryTab('all')}
-                        className={`px-4 py-2 text-sm rounded-t-lg transition-all ${summaryTab === 'all' ? 'bg-white text-blue-600 font-medium shadow-sm z-10' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === 'all' ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         ทั้งหมด
                     </button>
                     <button 
                         onClick={() => setSummaryTab(Branch.MAHASARAKHAM)}
-                        className={`px-4 py-2 text-sm rounded-t-lg transition-all ${summaryTab === Branch.MAHASARAKHAM ? 'bg-white text-green-600 font-medium shadow-sm z-10' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === Branch.MAHASARAKHAM ? 'bg-white shadow-sm text-green-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         MSK
                     </button>
                     <button 
                         onClick={() => setSummaryTab(Branch.KALASIN)}
-                        className={`px-4 py-2 text-sm rounded-t-lg transition-all ${summaryTab === Branch.KALASIN ? 'bg-white text-blue-600 font-medium shadow-sm z-10' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === Branch.KALASIN ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         KLS
                     </button>
@@ -191,7 +202,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
                           <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${booking.branch === Branch.MAHASARAKHAM ? 'bg-green-500' : 'bg-blue-500'}`}></div>
                           <div>
                               <p className="font-semibold text-gray-800">{booking.timeSlot} - <span className="text-gray-500 font-medium">ลูกค้า:</span> {booking.customerName}</p>
-                              <p className="text-sm text-gray-600">{booking.carModel} <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${booking.branch === Branch.MAHASARAKHAM ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>{booking.branch}</span></p>
+                              <p className="text-sm text-gray-600">{modelNameToShortName.get(booking.carModel) || booking.carModel} <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${booking.branch === Branch.MAHASARAKHAM ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>{booking.branch}</span></p>
                           </div>
                       </div>
                       <div className="text-right flex-shrink-0 flex items-center gap-2">

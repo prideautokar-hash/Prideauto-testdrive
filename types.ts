@@ -22,6 +22,8 @@ export enum Branch {
 export interface Car {
   id: number;
   modelName: string;
+  shortModelName?: string;
+  carModel?: string;
   isActive: boolean;
   branchId: number;
   branch?: string;
