@@ -100,12 +100,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
           
           <div className="flex-grow flex flex-col items-center justify-center gap-0.5">
             {mskCount > 0 && (
-              <p className="text-green-600 font-bold text-xs flex items-baseline gap-0.5">
+              <p className="text-green-600 font-bold text-[10px] md:text-xs flex items-baseline gap-0.5">
                 MSK: {mskCount}
               </p>
             )}
             {klsCount > 0 && (
-              <p className="text-blue-600 font-bold text-xs flex items-baseline gap-0.5">
+              <p className="text-blue-600 font-bold text-[10px] md:text-xs flex items-baseline gap-0.5">
                 KLS: {klsCount}
               </p>
             )}
@@ -143,22 +143,22 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
                 สรุปการจอง
             </h3>
             <div className="flex items-center gap-4">
-                <div className="flex bg-gray-100 p-1 rounded-md">
+                <div className="flex items-end gap-0.5">
                     <button 
                         onClick={() => setSummaryTab('all')}
-                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === 'all' ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-4 py-2 text-sm rounded-t-lg transition-all ${summaryTab === 'all' ? 'bg-white text-blue-600 font-medium shadow-sm z-10' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
                     >
                         ทั้งหมด
                     </button>
                     <button 
                         onClick={() => setSummaryTab(Branch.MAHASARAKHAM)}
-                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === Branch.MAHASARAKHAM ? 'bg-white shadow-sm text-green-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-4 py-2 text-sm rounded-t-lg transition-all ${summaryTab === Branch.MAHASARAKHAM ? 'bg-white text-green-600 font-medium shadow-sm z-10' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
                     >
                         MSK
                     </button>
                     <button 
                         onClick={() => setSummaryTab(Branch.KALASIN)}
-                        className={`px-3 py-1 text-sm rounded-md transition-colors ${summaryTab === Branch.KALASIN ? 'bg-white shadow-sm text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-4 py-2 text-sm rounded-t-lg transition-all ${summaryTab === Branch.KALASIN ? 'bg-white text-blue-600 font-medium shadow-sm z-10' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
                     >
                         KLS
                     </button>
