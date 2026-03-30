@@ -72,6 +72,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
     const [pieChartSelectedMonth, setPieChartSelectedMonth] = useState<string>(currentMonthStr);
     const [pieChartSelectedYear, setPieChartSelectedYear] = useState<string>(currentYearStr);
 
+    const shortNameToModelName = useMemo(() => {
+        const map = new Map<string, string>();
+        carModels.forEach(c => {
+            if (c.shortModelName) {
+                map.set(c.shortModelName, c.modelName);
+            }
+        });
+        return map;
+    }, [carModels]);
+
     const modelNameToShortName = useMemo(() => {
         const map = new Map<string, string>();
         carModels.forEach(c => {
@@ -84,17 +94,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
 
     const carModelOptions = useMemo(() => {
         const options = [{ value: 'all', label: 'รถทุกรุ่น' }];
-        // Get unique model names from carModels
-        const uniqueModels = Array.from(new Set(carModels.map(c => c.modelName)));
-        uniqueModels.forEach(model => {
-            const shortName = modelNameToShortName.get(model);
+        // Get unique short model names from carModels
+        const uniqueShortModels = Array.from(new Set(carModels.map(c => c.shortModelName || c.modelName)));
+        uniqueShortModels.forEach(shortName => {
             options.push({
-                value: model,
-                label: shortName ? `${shortName} (${model})` : model
+                value: shortName,
+                label: shortName
             });
         });
         return options;
-    }, [carModels, modelNameToShortName]);
+    }, [carModels]);
 
     const [stockData, setStockData] = useState<{ model: string; count: number }[]>([]);
     const [stockLoading, setStockLoading] = useState(true);
@@ -199,7 +208,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
     const { lineChartData, lineChartTitle } = useMemo(() => {
         const filteredBookings = lineChartCarModel === 'all'
             ? filteredBookingsByBranch
-            : filteredBookingsByBranch.filter(b => b.carModel === lineChartCarModel);
+            : filteredBookingsByBranch.filter(b => {
+                const modelName = shortNameToModelName.get(lineChartCarModel) || lineChartCarModel;
+                return b.carModel === modelName;
+            });
 
         let title = '';
 
