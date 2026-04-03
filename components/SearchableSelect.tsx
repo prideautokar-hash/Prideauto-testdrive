@@ -34,6 +34,8 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       classNamePrefix="react-select"
       isClearable={false}
       isSearchable={true}
+      menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+      menuPosition="fixed"
       styles={{
         control: (base) => ({
           ...base,
@@ -47,7 +49,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         }),
         menu: (base) => ({
           ...base,
-          zIndex: 50,
+          zIndex: 9999,
+        }),
+        menuPortal: (base) => ({
+          ...base,
+          zIndex: 9999,
         }),
       }}
       {...props}
