@@ -169,14 +169,14 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                         br_car.name as "carBranch",
                         b.notes,
                         s.name as "salesperson",
-                        br.name as "branch",
+                        s_br.name as "branch",
                         u.username as "recordedBy"
                     FROM public.bookings b
                     JOIN public.customers c ON b.customer_id = c.id
                     JOIN public.cars cr ON b.car_id = cr.id
                     JOIN public.branches br_car ON cr.branch_id = br_car.id
                     JOIN public.salespeople s ON b.salesperson_id = s.id
-                    JOIN public.branches br ON b.branch_id = br.id
+                    JOIN public.branches s_br ON s.branch_id = s_br.id
                     LEFT JOIN public.users u ON b.created_by_user_id = u.id
                     WHERE b.booking_date BETWEEN $1 AND $2
                     ORDER BY b.booking_date, b.booking_time
@@ -332,14 +332,14 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                             br_car.name as "carBranch",
                             b.notes,
                             s.name as "salesperson",
-                            br.name as "branch"
+                            s_br.name as "branch"
                         FROM public.bookings b
                         JOIN public.customers c ON b.customer_id = c.id
                         JOIN public.cars cr ON b.car_id = cr.id
                         JOIN public.branches br_car ON cr.branch_id = br_car.id
                         JOIN public.salespeople s ON b.salesperson_id = s.id
-                        JOIN public.branches br ON b.branch_id = br.id
-                        WHERE br.name = $1
+                        JOIN public.branches s_br ON s.branch_id = s_br.id
+                        WHERE s_br.name = $1
                         ORDER BY b.booking_date, b.booking_time
                     `, [branch]);
                     
@@ -362,8 +362,8 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
                     
                     // --- CONFLICT CHECK ---
                     const bookingConflict = await client.query(
-                        'SELECT id FROM public.bookings WHERE car_id = $1 AND booking_date = $2 AND booking_time = $3 AND branch_id = $4',
-                        [carId, date, timeSlot, branchId]
+                        'SELECT id FROM public.bookings WHERE car_id = $1 AND booking_date = $2 AND booking_time = $3',
+                        [carId, date, timeSlot]
                     );
                     if (bookingConflict.rows.length > 0) {
                         return sendResponse(res, 409, { message: `รถรุ่นนี้ถูกจองในช่วงเวลา ${timeSlot} แล้ว` });
@@ -371,9 +371,9 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
                     const unavailabilityConflict = await client.query(
                         `SELECT id FROM public.car_unavailability 
-                         WHERE car_id = $1 AND unavailability_date = $2 AND branch_id = $3
-                         AND ($4::time, $4::time + '29 minutes'::interval) OVERLAPS (start_time, end_time)`,
-                         [carId, date, branchId, timeSlot]
+                         WHERE car_id = $1 AND unavailability_date = $2
+                         AND ($3::time, $3::time + '29 minutes'::interval) OVERLAPS (start_time, end_time)`,
+                         [carId, date, timeSlot]
                     );
                     if (unavailabilityConflict.rows.length > 0) {
                         return sendResponse(res, 409, { message: `รถรุ่นนี้ไม่พร้อมใช้งานในช่วงเวลา ${timeSlot}` });

@@ -6,16 +6,17 @@ import SearchableSelect from './SearchableSelect';
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (booking: Omit<Booking, 'id' | 'branch' | 'carId'>) => void;
+  onSave: (booking: Omit<Booking, 'id' | 'carId'>) => void;
   initialData?: Partial<Booking>;
   bookings: Booking[];
   unavailability: Unavailability[];
   canSave: boolean;
   carModels: Car[];
   salespeople: Salesperson[];
+  branches: { id: number; name: string }[];
 }
 
-const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability, canSave, carModels, salespeople }) => {
+const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, initialData, bookings, unavailability, canSave, carModels, salespeople, branches }) => {
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -86,6 +87,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
     const selectedCar = carModels.find(m => m.modelName === carModel);
     const carBranch = selectedCar?.branch || '';
 
+    const selectedSalesperson = salespeople.find(s => s.name === salesperson);
+    const salespersonBranchName = branches.find(b => b.id === selectedSalesperson?.branchId)?.name || carBranch;
+
     onSave({
       customerName,
       phoneNumber,
@@ -93,6 +97,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
       timeSlot,
       carModel,
       carBranch,
+      branch: salespersonBranchName as any,
       notes,
       salesperson,
     });

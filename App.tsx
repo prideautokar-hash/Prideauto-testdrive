@@ -107,7 +107,7 @@ const App: React.FC = () => {
         setIsModalOpen(true);
     }, [isAdmin]);
 
-    const handleSaveBooking = async (newBookingData: Omit<Booking, 'id' | 'branch' | 'carId'>) => {
+    const handleSaveBooking = async (newBookingData: Omit<Booking, 'id' | 'carId'>) => {
         if (!authToken) return;
         if (!isAdmin) {
             alert('คุณไม่มีสิทธิ์ในการบันทึกข้อมูล');
@@ -115,7 +115,7 @@ const App: React.FC = () => {
         }
         
         try {
-            const branch = newBookingData.carBranch as Branch;
+            const branch = newBookingData.branch;
             await addBooking(newBookingData, branch, authToken);
             fetchData(authToken);
             setIsModalOpen(false);
@@ -383,6 +383,7 @@ const App: React.FC = () => {
                 canSave={isAdmin}
                 carModels={activeCars}
                 salespeople={salespeople.filter(s => s.isActive)}
+                branches={branches}
             />
         </div>
     );

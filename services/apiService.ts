@@ -77,7 +77,7 @@ export const deleteCar = async (carId: number, token: string): Promise<void> => 
 };
 
 export const addBooking = async (
-  bookingData: Omit<Booking, 'id' | 'branch' | 'carId'>,
+  bookingData: Omit<Booking, 'id' | 'carId'>,
   branch: Branch,
   token: string
 ): Promise<Booking> => {
