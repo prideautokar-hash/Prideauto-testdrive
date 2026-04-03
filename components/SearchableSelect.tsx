@@ -36,6 +36,8 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       isSearchable={true}
       menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
       menuPosition="fixed"
+      menuPlacement="auto"
+      maxMenuHeight={450}
       styles={{
         control: (base) => ({
           ...base,

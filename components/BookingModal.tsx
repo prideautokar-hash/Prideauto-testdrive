@@ -153,10 +153,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
                 <SearchableSelect 
                   value={carModel} 
                   onChange={val => setCarModel(val as CarModel)} 
-                  options={availableCarModels.map(car => ({
-                    value: car.modelName,
-                    label: `${car.modelName} (${car.branch})`
-                  }))}
+                  options={availableCarModels
+                    .slice()
+                    .sort((a, b) => a.modelName.localeCompare(b.modelName))
+                    .map(car => ({
+                      value: car.modelName,
+                      label: `${car.modelName} (${car.branch})`
+                    }))}
                   placeholder="เลือกรุ่นรถ"
                 />
               ) : (
@@ -170,7 +173,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, onSave, in
               <SearchableSelect 
                 value={salesperson} 
                 onChange={setSalesperson} 
-                options={salespeople.map(s => ({ value: s.name, label: s.name }))}
+                options={salespeople
+                  .slice()
+                  .sort((a, b) => a.name.localeCompare(b.name, 'th'))
+                  .map(s => ({ value: s.name, label: s.name }))}
                 placeholder="เลือกเซลส์"
               />
             </div>
