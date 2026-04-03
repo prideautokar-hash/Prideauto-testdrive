@@ -358,12 +358,38 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                     <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
                     <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm text-gray-500">เลือกเดือนสำหรับสรุปข้อมูล:</span>
-                        <input
-                            type="month"
-                            value={statsSelectedMonth}
-                            onChange={(e) => setStatsSelectedMonth(e.target.value)}
-                            className="border border-gray-300 rounded-md shadow-sm p-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <div className="flex gap-1">
+                            <select
+                                value={statsSelectedMonth.split('-')[1]}
+                                onChange={(e) => {
+                                    const [y, m] = statsSelectedMonth.split('-');
+                                    setStatsSelectedMonth(`${y}-${e.target.value}`);
+                                }}
+                                className="border border-gray-300 rounded-md shadow-sm p-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                {Array.from({ length: 12 }, (_, i) => {
+                                    const month = String(i + 1).padStart(2, '0');
+                                    return (
+                                        <option key={month} value={month}>
+                                            {new Date(2000, i).toLocaleString('th-TH', { month: 'long' })}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                            <select
+                                value={statsSelectedMonth.split('-')[0]}
+                                onChange={(e) => {
+                                    const [y, m] = statsSelectedMonth.split('-');
+                                    setStatsSelectedMonth(`${e.target.value}-${m}`);
+                                }}
+                                className="border border-gray-300 rounded-md shadow-sm p-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                {Array.from({ length: 10 }, (_, i) => {
+                                    const year = new Date().getFullYear() - i + 1; // Show current year + 1 down to past 8 years
+                                    return <option key={year} value={year}>{year}</option>;
+                                })}
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div className="flex bg-gray-100 p-1 rounded-lg">
