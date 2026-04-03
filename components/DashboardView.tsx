@@ -159,6 +159,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
         fetchStockData();
     }, [authToken]);
 
+    // Filter bookings based on the salesperson's branch (MHK or KLS)
     const filteredBookingsByBranch = useMemo(() => {
         if (branchFilter === 'all') return bookings;
         return bookings.filter(b => b.branch === branchFilter);
