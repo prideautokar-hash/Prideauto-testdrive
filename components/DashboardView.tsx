@@ -380,12 +380,38 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                         </div>
                         <div className="flex items-center gap-2">
                             {lineChartPeriod === 'day' && (
-                                <input
-                                    type="month"
-                                    value={lineChartSelectedMonth}
-                                    onChange={(e) => setLineChartSelectedMonth(e.target.value)}
-                                    className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                />
+                                <div className="flex gap-1">
+                                    <select
+                                        value={lineChartSelectedMonth.split('-')[1]}
+                                        onChange={(e) => {
+                                            const [y, m] = lineChartSelectedMonth.split('-');
+                                            setLineChartSelectedMonth(`${y}-${e.target.value}`);
+                                        }}
+                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                                    >
+                                        {Array.from({ length: 12 }, (_, i) => {
+                                            const month = String(i + 1).padStart(2, '0');
+                                            return (
+                                                <option key={month} value={month}>
+                                                    {new Date(2000, i).toLocaleString('th-TH', { month: 'long' })}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                    <select
+                                        value={lineChartSelectedMonth.split('-')[0]}
+                                        onChange={(e) => {
+                                            const [y, m] = lineChartSelectedMonth.split('-');
+                                            setLineChartSelectedMonth(`${e.target.value}-${m}`);
+                                        }}
+                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                                    >
+                                        {Array.from({ length: 10 }, (_, i) => {
+                                            const year = new Date().getFullYear() - i;
+                                            return <option key={year} value={year}>{year}</option>;
+                                        })}
+                                    </select>
+                                </div>
                             )}
                             {lineChartPeriod === 'month' && (
                                 <select
@@ -393,7 +419,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                                     onChange={(e) => setLineChartSelectedYear(e.target.value)}
                                     className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
                                 >
-                                    {Array.from({ length: 5 }, (_, i) => {
+                                    {Array.from({ length: 10 }, (_, i) => {
                                         const year = new Date().getFullYear() - i;
                                         return <option key={year} value={year}>{year}</option>;
                                     })}
@@ -432,12 +458,38 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                         </div>
                         <div className="flex items-center gap-2">
                             {pieChartPeriod === 'day' && (
-                                <input
-                                    type="month"
-                                    value={pieChartSelectedMonth}
-                                    onChange={(e) => setPieChartSelectedMonth(e.target.value)}
-                                    className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                />
+                                <div className="flex gap-1">
+                                    <select
+                                        value={pieChartSelectedMonth.split('-')[1]}
+                                        onChange={(e) => {
+                                            const [y, m] = pieChartSelectedMonth.split('-');
+                                            setPieChartSelectedMonth(`${y}-${e.target.value}`);
+                                        }}
+                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                                    >
+                                        {Array.from({ length: 12 }, (_, i) => {
+                                            const month = String(i + 1).padStart(2, '0');
+                                            return (
+                                                <option key={month} value={month}>
+                                                    {new Date(2000, i).toLocaleString('th-TH', { month: 'long' })}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                    <select
+                                        value={pieChartSelectedMonth.split('-')[0]}
+                                        onChange={(e) => {
+                                            const [y, m] = pieChartSelectedMonth.split('-');
+                                            setPieChartSelectedMonth(`${e.target.value}-${m}`);
+                                        }}
+                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
+                                    >
+                                        {Array.from({ length: 10 }, (_, i) => {
+                                            const year = new Date().getFullYear() - i;
+                                            return <option key={year} value={year}>{year}</option>;
+                                        })}
+                                    </select>
+                                </div>
                             )}
                             {pieChartPeriod === 'month' && (
                                 <select
@@ -445,7 +497,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                                     onChange={(e) => setPieChartSelectedYear(e.target.value)}
                                     className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
                                 >
-                                    {Array.from({ length: 5 }, (_, i) => {
+                                    {Array.from({ length: 10 }, (_, i) => {
                                         const year = new Date().getFullYear() - i;
                                         return <option key={year} value={year}>{year}</option>;
                                     })}
