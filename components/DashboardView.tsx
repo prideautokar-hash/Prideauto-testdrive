@@ -71,6 +71,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
     const [lineChartSelectedYear, setLineChartSelectedYear] = useState<string>(currentYearStr);
     const [pieChartSelectedMonth, setPieChartSelectedMonth] = useState<string>(currentMonthStr);
     const [pieChartSelectedYear, setPieChartSelectedYear] = useState<string>(currentYearStr);
+    const [statsSelectedMonth, setStatsSelectedMonth] = useState<string>(currentMonthStr);
 
     const shortNameToModelName = useMemo(() => {
         const map = new Map<string, string>();
@@ -87,6 +88,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
         carModels.forEach(c => {
             if (c.shortModelName) {
                 map.set(c.modelName, c.shortModelName);
+            }
+        });
+        return map;
+    }, [carModels]);
+
+    const modelNameToCarModel = useMemo(() => {
+        const map = new Map<string, string>();
+        carModels.forEach(c => {
+            if (c.carModel) {
+                map.set(c.modelName, c.carModel);
             }
         });
         return map;
@@ -175,36 +186,37 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
             };
         }
 
-        const carCounts = new Map<CarModel, number>();
-        
-        // For Busiest Salesperson of the month
-        const today = new Date();
-        const thisMonthStr = today.toLocaleDateString('en-CA').substring(0, 7); // YYYY-MM
-        const salespersonCountsThisMonth = new Map<string, number>();
+        const carCounts = new Map<string, number>();
+        const salespersonCounts = new Map<string, number>();
+        let monthBookingsCount = 0;
         
         filteredBookingsByBranch.forEach(booking => {
-            // All-time car popularity
-            carCounts.set(booking.carModel, (carCounts.get(booking.carModel) || 0) + 1);
-            
-            // This month's salesperson stats
-            if (booking.date.startsWith(thisMonthStr)) {
-                salespersonCountsThisMonth.set(booking.salesperson, (salespersonCountsThisMonth.get(booking.salesperson) || 0) + 1);
+            if (booking.date.startsWith(statsSelectedMonth)) {
+                monthBookingsCount++;
+                
+                // Car popularity for the selected month
+                const baseModel = modelNameToCarModel.get(booking.carModel) || booking.carModel;
+                carCounts.set(baseModel, (carCounts.get(baseModel) || 0) + 1);
+                
+                // Salesperson stats for the selected month
+                salespersonCounts.set(booking.salesperson, (salespersonCounts.get(booking.salesperson) || 0) + 1);
             }
         });
 
         const mostPopularCarEntry = [...carCounts.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
-        const busiestSalespersonEntry = [...salespersonCountsThisMonth.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
+        const busiestSalespersonEntry = [...salespersonCounts.entries()].reduce((a, b) => (a[1] > b[1] ? a : b), [undefined, 0]);
         
+        const today = new Date();
         const todayString = today.toLocaleDateString('en-CA'); // YYYY-MM-DD format
         const upcomingBookings = filteredBookingsByBranch.filter(b => b.date >= todayString).length;
 
         return {
-            totalBookings: filteredBookingsByBranch.length,
+            totalBookings: monthBookingsCount,
             upcomingBookings,
             mostPopularCar: { name: mostPopularCarEntry[0] || 'N/A', count: mostPopularCarEntry[1] },
             busiestSalesperson: { name: busiestSalespersonEntry[0] || 'N/A', count: busiestSalespersonEntry[1] },
         };
-    }, [filteredBookingsByBranch]);
+    }, [filteredBookingsByBranch, statsSelectedMonth, modelNameToCarModel]);
 
     const { lineChartData, lineChartTitle } = useMemo(() => {
         const filteredBookings = lineChartCarModel === 'all'
@@ -294,19 +306,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
             return true;
         });
 
-        const countsByModel = new Map<CarModel, number>();
+        const countsByModel = new Map<string, number>();
         filteredBookings.forEach(booking => {
-            countsByModel.set(booking.carModel, (countsByModel.get(booking.carModel) || 0) + 1);
+            const baseModel = modelNameToCarModel.get(booking.carModel) || booking.carModel;
+            countsByModel.set(baseModel, (countsByModel.get(baseModel) || 0) + 1);
         });
 
         return Array.from(countsByModel.entries())
             .map(([name, value]) => ({ 
-                name: modelNameToShortName.get(name) || name.replace('BYD ', ''), 
+                name: name.replace('BYD ', ''), 
                 value 
             }))
             .sort((a, b) => b.value - a.value);
 
-    }, [filteredBookingsByBranch, pieChartPeriod, pieChartSelectedMonth, pieChartSelectedYear, modelNameToShortName]);
+    }, [filteredBookingsByBranch, pieChartPeriod, pieChartSelectedMonth, pieChartSelectedYear, modelNameToCarModel]);
 
     const ChartButton = ({ label, period, current, setter }: any) => (
         <button
@@ -342,7 +355,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
     return (
         <div className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm text-gray-500">เลือกเดือนสำหรับสรุปข้อมูล:</span>
+                        <input
+                            type="month"
+                            value={statsSelectedMonth}
+                            onChange={(e) => setStatsSelectedMonth(e.target.value)}
+                            className="border border-gray-300 rounded-md shadow-sm p-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                </div>
                 <div className="flex bg-gray-100 p-1 rounded-lg">
                     <button 
                         onClick={() => setBranchFilter('all')}
@@ -544,10 +568,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Bookings" value={generalStats.totalBookings} />
+                <StatCard 
+                    title={`Total Bookings (${new Date(statsSelectedMonth).toLocaleString('th-TH', { month: 'short', year: '2-digit' })})`} 
+                    value={generalStats.totalBookings} 
+                />
                 <StatCard title="Upcoming Bookings" value={generalStats.upcomingBookings} />
-                <StatCard title="Most Popular Car" value={generalStats.mostPopularCar.name} description={generalStats.mostPopularCar.count > 0 ? `${generalStats.mostPopularCar.count} bookings` : undefined} />
-                <StatCard title="Busiest Salesperson of the Month" value={generalStats.busiestSalesperson.name} description={generalStats.busiestSalesperson.count > 0 ? `${generalStats.busiestSalesperson.count} bookings` : undefined} />
+                <StatCard 
+                    title={`Most Popular Car (${new Date(statsSelectedMonth).toLocaleString('th-TH', { month: 'short' })})`} 
+                    value={generalStats.mostPopularCar.name} 
+                    description={generalStats.mostPopularCar.count > 0 ? `${generalStats.mostPopularCar.count} bookings` : undefined} 
+                />
+                <StatCard 
+                    title={`Busiest Salesperson (${new Date(statsSelectedMonth).toLocaleString('th-TH', { month: 'short' })})`} 
+                    value={generalStats.busiestSalesperson.name} 
+                    description={generalStats.busiestSalesperson.count > 0 ? `${generalStats.busiestSalesperson.count} bookings` : undefined} 
+                />
             </div>
         </div>
     );
