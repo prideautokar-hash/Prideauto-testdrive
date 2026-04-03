@@ -67,11 +67,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
     const currentMonthStr = today.toISOString().substring(0, 7); // YYYY-MM
     const currentYearStr = today.getFullYear().toString(); // YYYY
 
-    const [lineChartSelectedMonth, setLineChartSelectedMonth] = useState<string>(currentMonthStr);
     const [lineChartSelectedYear, setLineChartSelectedYear] = useState<string>(currentYearStr);
-    const [pieChartSelectedMonth, setPieChartSelectedMonth] = useState<string>(currentMonthStr);
-    const [pieChartSelectedYear, setPieChartSelectedYear] = useState<string>(currentYearStr);
     const [statsSelectedMonth, setStatsSelectedMonth] = useState<string>(currentMonthStr);
+
+    const statsSelectedYear = useMemo(() => statsSelectedMonth.split('-')[0], [statsSelectedMonth]);
 
     const shortNameToModelName = useMemo(() => {
         const map = new Map<string, string>();
@@ -229,7 +228,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
         let title = '';
 
         if (lineChartPeriod === 'day') {
-            const [year, month] = lineChartSelectedMonth.split('-').map(Number);
+            const [year, month] = statsSelectedMonth.split('-').map(Number);
             const monthName = new Date(year, month - 1).toLocaleString('th-TH', { month: 'long', year: 'numeric' });
             title = `ข้อมูลเดือน ${monthName}`;
             
@@ -258,15 +257,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
         }
 
         if (lineChartPeriod === 'month') {
-            title = `ข้อมูลปี ${lineChartSelectedYear}`;
+            title = `ข้อมูลปี ${statsSelectedYear}`;
             const months = Array.from({ length: 12 }, (_, i) => {
                 const m = i + 1;
-                return `${lineChartSelectedYear}-${String(m).padStart(2, '0')}`;
+                return `${statsSelectedYear}-${String(m).padStart(2, '0')}`;
             });
 
             const countsByMonth = new Map<string, number>();
             filteredBookings.forEach(booking => {
-                if (booking.date.startsWith(lineChartSelectedYear)) {
+                if (booking.date.startsWith(statsSelectedYear)) {
                     const monthKey = booking.date.substring(0, 7);
                     countsByMonth.set(monthKey, (countsByMonth.get(monthKey) || 0) + 1);
                 }
@@ -297,12 +296,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
         
         return { lineChartData: data, lineChartTitle: title };
 
-    }, [filteredBookingsByBranch, lineChartPeriod, lineChartCarModel, lineChartSelectedMonth, lineChartSelectedYear]);
+    }, [filteredBookingsByBranch, lineChartPeriod, lineChartCarModel, statsSelectedMonth, statsSelectedYear]);
 
     const pieChartData = useMemo(() => {
         const filteredBookings = filteredBookingsByBranch.filter(booking => {
-            if (pieChartPeriod === 'day') return booking.date.startsWith(pieChartSelectedMonth);
-            if (pieChartPeriod === 'month') return booking.date.startsWith(pieChartSelectedYear);
+            if (pieChartPeriod === 'day') return booking.date.startsWith(statsSelectedMonth);
+            if (pieChartPeriod === 'month') return booking.date.startsWith(statsSelectedYear);
             return true;
         });
 
@@ -319,7 +318,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
             }))
             .sort((a, b) => b.value - a.value);
 
-    }, [filteredBookingsByBranch, pieChartPeriod, pieChartSelectedMonth, pieChartSelectedYear, modelNameToCarModel]);
+    }, [filteredBookingsByBranch, pieChartPeriod, statsSelectedMonth, statsSelectedYear, modelNameToCarModel]);
 
     const ChartButton = ({ label, period, current, setter }: any) => (
         <button
@@ -403,52 +402,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                             <ChartButton label="รายปี" period="year" current={lineChartPeriod} setter={setLineChartPeriod} />
                         </div>
                         <div className="flex items-center gap-2">
-                            {lineChartPeriod === 'day' && (
-                                <div className="flex gap-1">
-                                    <select
-                                        value={lineChartSelectedMonth.split('-')[1]}
-                                        onChange={(e) => {
-                                            const [y, m] = lineChartSelectedMonth.split('-');
-                                            setLineChartSelectedMonth(`${y}-${e.target.value}`);
-                                        }}
-                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                    >
-                                        {Array.from({ length: 12 }, (_, i) => {
-                                            const month = String(i + 1).padStart(2, '0');
-                                            return (
-                                                <option key={month} value={month}>
-                                                    {new Date(2000, i).toLocaleString('th-TH', { month: 'long' })}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                    <select
-                                        value={lineChartSelectedMonth.split('-')[0]}
-                                        onChange={(e) => {
-                                            const [y, m] = lineChartSelectedMonth.split('-');
-                                            setLineChartSelectedMonth(`${e.target.value}-${m}`);
-                                        }}
-                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                    >
-                                        {Array.from({ length: 10 }, (_, i) => {
-                                            const year = new Date().getFullYear() - i;
-                                            return <option key={year} value={year}>{year}</option>;
-                                        })}
-                                    </select>
-                                </div>
-                            )}
-                            {lineChartPeriod === 'month' && (
-                                <select
-                                    value={lineChartSelectedYear}
-                                    onChange={(e) => setLineChartSelectedYear(e.target.value)}
-                                    className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                >
-                                    {Array.from({ length: 10 }, (_, i) => {
-                                        const year = new Date().getFullYear() - i;
-                                        return <option key={year} value={year}>{year}</option>;
-                                    })}
-                                </select>
-                            )}
                             <SearchableSelect
                                 value={lineChartCarModel}
                                 onChange={setLineChartCarModel}
@@ -479,54 +432,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                             <ChartButton label="รายเดือน" period="day" current={pieChartPeriod} setter={setPieChartPeriod} />
                             <ChartButton label="รายปี" period="month" current={pieChartPeriod} setter={setPieChartPeriod} />
                             <ChartButton label="ทั้งหมด" period="year" current={pieChartPeriod} setter={setPieChartPeriod} />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {pieChartPeriod === 'day' && (
-                                <div className="flex gap-1">
-                                    <select
-                                        value={pieChartSelectedMonth.split('-')[1]}
-                                        onChange={(e) => {
-                                            const [y, m] = pieChartSelectedMonth.split('-');
-                                            setPieChartSelectedMonth(`${y}-${e.target.value}`);
-                                        }}
-                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                    >
-                                        {Array.from({ length: 12 }, (_, i) => {
-                                            const month = String(i + 1).padStart(2, '0');
-                                            return (
-                                                <option key={month} value={month}>
-                                                    {new Date(2000, i).toLocaleString('th-TH', { month: 'long' })}
-                                                </option>
-                                            );
-                                        })}
-                                    </select>
-                                    <select
-                                        value={pieChartSelectedMonth.split('-')[0]}
-                                        onChange={(e) => {
-                                            const [y, m] = pieChartSelectedMonth.split('-');
-                                            setPieChartSelectedMonth(`${e.target.value}-${m}`);
-                                        }}
-                                        className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                    >
-                                        {Array.from({ length: 10 }, (_, i) => {
-                                            const year = new Date().getFullYear() - i;
-                                            return <option key={year} value={year}>{year}</option>;
-                                        })}
-                                    </select>
-                                </div>
-                            )}
-                            {pieChartPeriod === 'month' && (
-                                <select
-                                    value={pieChartSelectedYear}
-                                    onChange={(e) => setPieChartSelectedYear(e.target.value)}
-                                    className="border border-gray-300 rounded-md shadow-sm p-1 text-sm"
-                                >
-                                    {Array.from({ length: 10 }, (_, i) => {
-                                        const year = new Date().getFullYear() - i;
-                                        return <option key={year} value={year}>{year}</option>;
-                                    })}
-                                </select>
-                            )}
                         </div>
                     </div>
                     <div style={{ width: '100%', height: 300 }}>
