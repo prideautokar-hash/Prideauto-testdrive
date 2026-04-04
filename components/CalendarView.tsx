@@ -65,7 +65,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
     return (
       <div className="flex justify-between items-center mb-4">
         <button onClick={() => setSelectedDate(new Date(currentYear, currentMonth - 1, 1))} className="p-2 rounded-full hover:bg-gray-100">&lt;</button>
-        <h2 className="text-lg md:text-xl font-bold text-gray-700">{monthNames[currentMonth]} {currentYear}</h2>
+        <h2 className="text-lg lg:text-xl font-bold text-gray-700">{monthNames[currentMonth]} {currentYear}</h2>
         <button onClick={() => setSelectedDate(new Date(currentYear, currentMonth + 1, 1))} className="p-2 rounded-full hover:bg-gray-100">&gt;</button>
       </div>
     );
@@ -111,12 +111,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
           
           <div className="flex-grow flex flex-col items-center justify-center gap-0.5">
             {mskCount > 0 && (
-              <p className="text-green-600 font-bold text-[10px] md:text-xs flex items-baseline gap-0.5">
+              <p className="text-green-600 font-bold text-[10px] lg:text-xs flex items-baseline gap-0.5">
                 MSK: {mskCount}
               </p>
             )}
             {klsCount > 0 && (
-              <p className="text-blue-600 font-bold text-[10px] md:text-xs flex items-baseline gap-0.5">
+              <p className="text-blue-600 font-bold text-[10px] lg:text-xs flex items-baseline gap-0.5">
                 KLS: {klsCount}
               </p>
             )}
@@ -129,9 +129,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({ bookings, selectedDate, set
   };
   
   return (
-    <div className="p-4 md:p-6">
-       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">ปฏิทินการจอง</h1>
+    <div className="p-4 lg:p-6">
+       <div className="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">ปฏิทินการจอง</h1>
         {canAdd && (
             <button
               onClick={() => openBookingModal({ date: toYYYYMMDD(selectedDate) })}

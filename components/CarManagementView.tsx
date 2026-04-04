@@ -282,8 +282,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
     };
 
     return (
-        <div className="p-4 md:p-6 max-w-4xl mx-auto">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+        <div className="p-4 lg:p-6 max-w-4xl mx-auto">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">Setting</h1>
                     <p className="text-gray-500">จัดการข้อมูลรถและพนักงานขายในระบบ</p>
@@ -292,7 +292,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                     <button 
                         onClick={handleStartAdding}
                         style={{ backgroundColor: '#7D9AB9' }}
-                        className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm w-full md:w-auto"
+                        className="text-white px-4 py-2 rounded-md hover:opacity-90 shadow-sm w-full lg:w-auto"
                     >
                         {activeTab === 'cars' ? '+ เพิ่มรถใหม่' : activeTab === 'salespeople' ? '+ เพิ่มเซลส์ใหม่' : '+ เพิ่มผู้ใช้ใหม่'}
                     </button>
@@ -350,8 +350,8 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                     {error && <p className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">{error}</p>}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {activeTab === 'cars' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="md:col-span-2">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div className="lg:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700">ชื่อรุ่นรถ (และสี)*</label>
                                     <input 
                                         type="text" 
@@ -393,7 +393,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         )}
                         
                         {activeTab === 'salespeople' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">ชื่อเซลส์*</label>
                                     <input 
@@ -416,7 +416,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                         )}
 
                         {activeTab === 'users' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">ชื่อผู้ใช้งาน*</label>
                                     <input 
@@ -460,7 +460,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                                         ]}
                                     />
                                 </div>
-                                <div className="md:col-span-2">
+                                <div className="lg:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700">หมายเหตุ (Note)</label>
                                     <textarea 
                                         value={userNote} 
@@ -513,7 +513,7 @@ const CarManagementView: React.FC<CarManagementViewProps> = ({
                     
                     {error && <p className="bg-red-100 text-red-700 p-3 rounded-md mb-4 text-sm font-medium border border-red-200">{error}</p>}
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">จากวันที่</label>
                             <input 

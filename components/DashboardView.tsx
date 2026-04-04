@@ -124,8 +124,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
 
     useEffect(() => {
         const handleResize = () => {
-            // Mobile view (tailwind 'md' breakpoint is 768px)
-            if (window.innerWidth < 768) {
+            // Mobile view (tailwind 'lg' breakpoint is 1024px)
+            if (window.innerWidth < 1024) {
                 // Pull further left and reduce right margin to expand chart
                 setStockChartMargin({ top: 20, right: 20, left: -80, bottom: 5 });
             } else { // Desktop view
@@ -352,8 +352,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
     };
 
     return (
-        <div className="p-4 md:p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="p-4 lg:p-6">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
                 <div className="flex flex-col gap-1">
                     <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
                     <div className="flex items-center gap-2 mt-1">
@@ -498,7 +498,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ bookings, authToken, carM
                 </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <StatCard 
                     title={`Total Bookings (${new Date(statsSelectedMonth).toLocaleString('th-TH', { month: 'short', year: '2-digit' })})`} 
                     value={generalStats.totalBookings} 

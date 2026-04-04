@@ -329,7 +329,7 @@ const App: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50">
             {/* Desktop top nav */}
-            <header className="bg-white border-b hidden md:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-sm z-20">
+            <header className="bg-white border-b hidden lg:flex fixed top-0 left-0 right-0 h-16 items-center justify-between px-6 shadow-sm z-20">
                 <div className="flex items-center gap-4">
                     <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={isAdmin ? handleLogoUpload : undefined} />
                 </div>
@@ -347,8 +347,8 @@ const App: React.FC = () => {
             </header>
 
             {/* Content area */}
-            <div className="md:pt-16">
-                <header className="bg-white p-4 shadow-sm sticky top-0 z-30 md:hidden border-b">
+            <div className="lg:pt-16">
+                <header className="bg-white p-4 shadow-sm sticky top-0 z-30 lg:hidden border-b">
                     <div className="flex justify-between items-center w-full">
                         <Logo className="h-12 w-48" logoSrc={appLogo} onUpload={isAdmin ? handleLogoUpload : undefined} />
                         <div className="text-right">
@@ -358,13 +358,13 @@ const App: React.FC = () => {
                         </div>
                     </div>
                 </header>
-                <main className="flex-grow pb-20 md:pb-0">
+                <main className="flex-grow pb-20 lg:pb-0">
                     {renderPage()}
                 </main>
             </div>
 
             {/* Mobile bottom nav */}
-            <nav style={{ backgroundColor: '#98B6D7' }} className="fixed bottom-0 left-0 right-0 h-16 shadow-lg flex justify-around items-center md:hidden z-20">
+            <nav style={{ backgroundColor: '#98B6D7' }} className="fixed bottom-0 left-0 right-0 h-16 shadow-lg flex justify-around items-center lg:hidden z-20">
                 <MobileNavItem page="calendar" label="ปฏิทิน" icon={<CalendarIcon className="w-6 h-6" />} />
                 <MobileNavItem page="slots" label="Slots" icon={<ListIcon className="w-6 h-6" />} />
                 <MobileNavItem page="usage" label="ตารางรถ" icon={<GridIcon className="w-6 h-6" />} />

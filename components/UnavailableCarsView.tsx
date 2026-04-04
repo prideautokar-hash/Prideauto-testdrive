@@ -120,8 +120,8 @@ const UnavailableCarsView: React.FC<UnavailableCarsViewProps> = ({
     };
 
     return (
-        <div className="p-4 md:p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+        <div className="p-4 lg:p-6">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
                 <h1 className="text-3xl font-bold text-gray-800">รถไม่พร้อมใช้งาน</h1>
             </div>
 

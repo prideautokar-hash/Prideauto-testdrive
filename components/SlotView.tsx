@@ -85,8 +85,8 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
   });
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+    <div className="p-4 lg:p-6">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Time Slots</h1>
           <p className="text-gray-500">
@@ -117,7 +117,7 @@ const SlotView: React.FC<SlotViewProps> = ({ bookings, unavailability, selectedD
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {TIME_SLOTS.map(slot => {
             const slotBookings = bookingsByTimeSlot.get(slot) || [];
             const slotUnavailability = unavailabilityByTimeSlot.get(slot) || [];

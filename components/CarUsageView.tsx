@@ -117,8 +117,8 @@ const CarUsageView: React.FC<CarUsageViewProps> = ({ bookings, unavailability, s
   });
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+    <div className="p-4 lg:p-6">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">ตารางการใช้รถ</h1>
            <p className="text-gray-500">
