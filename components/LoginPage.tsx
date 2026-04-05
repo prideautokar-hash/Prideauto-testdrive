@@ -136,8 +136,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <h1 className="text-3xl font-bold text-gray-800">
             {view === 'login' ? 'Test Drive Booker' : 'สร้างบัญชีใหม่'}
           </h1>
-          <p className="mt-2 text-gray-600">
-            {view === 'login' ? 'ระบบจองคิวทดลองขับ' : 'กรอกข้อมูลเพื่อลงทะเบียน'}
+          <p className="mt-2 text-gray-600 text-xs whitespace-nowrap">
+            {view === 'login' ? 'ระบบจองคิวทดลองขับและบันทึกการใช้รถ' : 'กรอกข้อมูลเพื่อลงทะเบียน'}
           </p>
         </div>
         
