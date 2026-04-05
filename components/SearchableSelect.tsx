@@ -23,15 +23,16 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   ...props
 }) => {
   const selectedOption = options.find(opt => opt.value === value) || null;
-  const [isMobile, setIsMobile] = React.useState(false);
+  const [isTouchDevice, setIsTouchDevice] = React.useState(false);
 
   React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+    const checkTouch = () => {
+      setIsTouchDevice(window.matchMedia("(pointer: coarse)").matches);
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    checkTouch();
+    // Also check on resize in case of orientation changes or device emulation
+    window.addEventListener('resize', checkTouch);
+    return () => window.removeEventListener('resize', checkTouch);
   }, []);
 
   return (
@@ -43,7 +44,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       className={`mt-1 block w-full ${className}`}
       classNamePrefix="react-select"
       isClearable={false}
-      isSearchable={!isMobile}
+      isSearchable={!isTouchDevice}
       blurInputOnSelect={true}
       openMenuOnFocus={true}
       tabSelectsValue={false}
