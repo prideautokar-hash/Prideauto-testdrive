@@ -23,6 +23,16 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   ...props
 }) => {
   const selectedOption = options.find(opt => opt.value === value) || null;
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <Select
@@ -33,7 +43,11 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       className={`mt-1 block w-full ${className}`}
       classNamePrefix="react-select"
       isClearable={false}
-      isSearchable={true}
+      isSearchable={!isMobile}
+      blurInputOnSelect={true}
+      openMenuOnFocus={true}
+      tabSelectsValue={false}
+      menuShouldScrollIntoView={false}
       menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
       menuPosition="fixed"
       menuPlacement="auto"
